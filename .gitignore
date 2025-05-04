@@ -12,3 +12,4 @@ logs/
 .vscode/ # VS Code (kecuali jika ada setting spesifik proyek yg ingin dibagikan)
 *.sublime-project
 *.sublime-workspace
+.DS_Store
