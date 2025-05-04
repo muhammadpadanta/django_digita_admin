@@ -1,0 +1,33 @@
+# Git files
+.git/
+.gitignore
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files (jika ada)
+*.sqlite3
+db.sqlite3
+
+# OS files
+.DS_Store
+
+# IDE files
+.idea/
+.vscode/
+
+# Environment variables file
+.env
+.env.*

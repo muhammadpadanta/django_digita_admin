@@ -1,0 +1,14 @@
+.env
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store # macOS
+Thumbs.db # Windows
+*.log
+logs/
+.idea/ # JetBrains IDEs (PyCharm, etc.)
+.vscode/ # VS Code (kecuali jika ada setting spesifik proyek yg ingin dibagikan)
+*.sublime-project
+*.sublime-workspace

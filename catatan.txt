@@ -1,0 +1,8 @@
+# Menjalankan Management Commands: Jika perlu menjalankan perintah seperti createsuperuser, makemigrations, dll., buka terminal baru, navigasi ke root proyek, gunakan docker-compose exec
+
+langkah setup:
+1. docker compose up --build
+2. docker-compose exec web python manage.py createsuperuser
+   isi username digitaadmin, email digitaadmin@polibatam.ac.id, password digitaadmin
+3. untuk kelola data sementara pergi ke http://localhost:8000/admin/
+4. Tambahkan dulu Jurusan baru tambahkan Program Studi, baru bisa register Mahasiswa/Dosen di flutternya.
