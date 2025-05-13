@@ -3,10 +3,10 @@
 Backend REST API untuk aplikasi manajemen tugas akhir (skripsi/tesis) antara mahasiswa dan dosen. Dibangun menggunakan Django dan Django REST Framework, dengan database PostgreSQL. Proyek ini dikonfigurasi untuk dijalankan menggunakan Docker dan Docker Compose untuk kemudahan setup environment pengembangan.
 
 Made by PBL-IF09:
-3312301009 JUAN JONATHAN NAINGGOLAN
-3312301010 ALIA PRAMESTIA NURDENIA
-3312301074 STEVEN SITUMORANG
-3312301051 MUHAMMAD PADANTA TARIGAN
+- 3312301009 JUAN JONATHAN NAINGGOLAN
+- 3312301010 ALIA PRAMESTIA NURDENIA
+- 3312301074 STEVEN SITUMORANG
+- 3312301051 MUHAMMAD PADANTA TARIGAN
 
 **Tech Stack:**
 
@@ -89,8 +89,8 @@ Ikuti langkah-langkah ini untuk menjalankan project di environment laptopmu meng
     3. Setelah selesai, cek di Flutter apakah sudah muncul pilihan Jurusan dan Program Studi dari dropdown saat register Mahasiswa/Dosen.
 
 **`NOTE TAMBAHAN: `**
-Jika ingin mengunakan emulator jangan lupa tambahkan ip address laptop/pc mu di file .env dibagian ini:
 
+Jika ingin mengunakan android device asli jangan lupa tambahkan ip address laptop/pc mu di file .env dibagian ini:
 ```text
 ALLOWED_HOSTS=localhost 127.0.0.1 10.0.2.2 192.168.100.235 #tambahkan ip laptop kalian kalau mau coba di emulator
 ```
@@ -107,7 +107,7 @@ ALLOWED_HOSTS=localhost 127.0.0.1 10.0.2.2 192.168.100.235 #tambahkan ip laptop 
   ```bash
   docker-compose down
   ```
-- **Menghentikan & Menghapus Volume Data:** Jika ingin mereset total database (misalnya memulai dari awal), gunakan flag `-v`:
+- Jika ingin mereset total database (misalnya memulai dari awal):
   ```bash
   docker-compose down -v
   ```
