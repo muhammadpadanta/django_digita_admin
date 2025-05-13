@@ -82,8 +82,8 @@ class RegisterMahasiswaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Pengguna dengan email ini sudah terdaftar."})
 
         # Validasi tambahan
-        if not attrs['email'].endswith('@polibatam.ac.id'):
-            raise serializers.ValidationError({"email": "Harus menggunakan email universitas."})
+        # if not attrs['email'].endswith('@polibatam.ac.id'):
+        #     raise serializers.ValidationError({"email": "Harus menggunakan email universitas."})
 
         return attrs
 
@@ -147,8 +147,8 @@ class RegisterDosenSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Pengguna dengan email ini sudah terdaftar."})
 
         # Validasi tambahan
-        if not attrs['email'].endswith('@polibatam.ac.id'):
-            raise serializers.ValidationError({"email": "Harus menggunakan email universitas."})
+        # if not attrs['email'].endswith('@polibatam.ac.id'):
+        #     raise serializers.ValidationError({"email": "Harus menggunakan email universitas."})
 
         return attrs
 

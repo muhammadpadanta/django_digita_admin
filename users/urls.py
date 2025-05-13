@@ -11,6 +11,7 @@ urlpatterns = [
     path('register/mahasiswa/', views.RegisterMahasiswaView.as_view(), name='register-mahasiswa'),
     path('register/dosen/', views.RegisterDosenView.as_view(), name='register-dosen'),
     path('login/', views.LoginView.as_view(), name='login'),
+    path('logout/', views.LogoutView.as_view(), name='user-logout'),
     path('dosen/', views.DosenListView.as_view(), name='dosen-list'),
 
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

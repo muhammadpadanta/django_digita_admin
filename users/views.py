@@ -1,7 +1,8 @@
-from django.contrib.auth import authenticate
+from tokenize import TokenError
+from django.contrib.auth import authenticate, logout as django_logout
 from rest_framework import generics, status, views
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Count, Q
 from rest_framework import permissions
@@ -120,3 +121,24 @@ class LoginView(views.APIView):
                 return Response({"error": "Account disabled."}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"error": "Data yang diinputkan tidak ditemukan, Mohon periksa ulang data!"}, status=status.HTTP_401_UNAUTHORIZED)
+
+class LogoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"detail": "Refresh token is required in the request body."}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            if hasattr(request, 'session'):
+                django_logout(request)
+
+            return Response({"detail": "Successfully logged out. The refresh token has been blacklisted."}, status=status.HTTP_200_OK)
+        except TokenError:
+            return Response({"detail": "Token is invalid or expired."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": "An error occurred during logout."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
