@@ -6,3 +6,7 @@ djangorestframework_simplejwt==5.5.0
 psycopg2-binary==2.9.10
 PyJWT==2.9.0
 sqlparse==0.5.3
+gunicorn
+dj-database-url
+whitenoise
+python-dotenv
