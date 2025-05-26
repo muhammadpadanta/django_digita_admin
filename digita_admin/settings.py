@@ -72,11 +72,11 @@ if not DATABASES['default']:
     DATABASES = {
         'default': {
             'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
-            'NAME': os.environ.get('DB_NAME', 'digita_db_local'),
-            'USER': os.environ.get('DB_USER', 'digitaadmin'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'digitaadmin'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ.get('DB_PORT'),
         }
     }
 
@@ -128,7 +128,7 @@ CORS_ALLOWED_ORIGINS_STRING = os.environ.get('CORS_ALLOWED_ORIGINS')
 CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_STRING.split(' ') if CORS_ALLOWED_ORIGINS_STRING else []
 
 if not CORS_ALLOWED_ORIGINS and not CORS_ALLOW_ALL_ORIGINS:
-    CORS_ALLOW_ALL_ORIGINS = True # Fallback for safety if neither is configured
+    CORS_ALLOW_ALL_ORIGINS = True
 
 AUTHENTICATION_BACKENDS = [
     'users.backends.NimNikAuthBackend',
