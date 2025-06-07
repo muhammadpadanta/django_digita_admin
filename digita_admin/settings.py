@@ -19,7 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic", # Add this for development if using whitenoise
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     'rest_framework',
     'rest_framework_simplejwt',
@@ -46,7 +46,7 @@ ROOT_URLCONF = "digita_admin.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -140,3 +140,14 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('BREVO_EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('BREVO_EMAIL_PORT', 587))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('BREVO_EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('BREVO_EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('BREVO_DEFAULT_FROM_EMAIL', 'noreply@muhammadpadanta.tech')
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')

@@ -8,7 +8,7 @@ __pycache__/
 Thumbs.db # Windows
 *.log
 logs/
-.idea/ # JetBrains IDEs (PyCharm, etc.)
+.idea
 .vscode/ # VS Code (kecuali jika ada setting spesifik proyek yg ingin dibagikan)
 *.sublime-project
 *.sublime-workspace

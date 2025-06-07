@@ -1,5 +1,8 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import Jurusan, ProgramStudi, Mahasiswa, Dosen
@@ -7,28 +10,23 @@ from .models import Jurusan, ProgramStudi, Mahasiswa, Dosen
 
 # --- Serializer untuk List Dosen ---
 class DosenListSerializer(serializers.ModelSerializer):
-    """
-    Serializer untuk menampilkan daftar Dosen beserta informasi
-    tambahan (nama lengkap, email, jurusan, jumlah mahasiswa bimbingan).
-    """
 
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
 
-    # Field ini akan diisi oleh anotasi dari view
     jumlah_mahasiswa_aktif = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Dosen
         fields = [
-            'user_id', # Primary key Dosen (sama dengan user_id)
+            'user_id',
             'nik',
             'nama_lengkap',
             'email',
-            'jurusan', # Akan berisi Jurusan jika menggunakan JurusanSerializer
+            'jurusan',
             'jumlah_mahasiswa_aktif'
         ]
-        read_only_fields = fields # Semua field read-only untuk list view
+        read_only_fields = fields
 
 # --- Serializer untuk data lookup (dropdown, dll) ---
 class JurusanSerializer(serializers.ModelSerializer):
@@ -70,14 +68,12 @@ class RegisterMahasiswaSerializer(serializers.ModelSerializer):
         fields = ['nim', 'program_studi_id', 'email', 'password', 'password2', 'nama_lengkap']
 
     def validate(self, attrs):
-        """Validasi data tambahan (password, keunikan User)."""
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Konfirmasi kata sandi tidak cocok."})
 
         if User.objects.filter(username=attrs['nim']).exists():
             raise serializers.ValidationError({"nim": "NIM ini sudah terdaftar sebagai username pengguna lain."})
 
-        # Cek keunikan email di tabel User
         if User.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Pengguna dengan email ini sudah terdaftar."})
 
@@ -88,7 +84,6 @@ class RegisterMahasiswaSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """Membuat instance User dan Mahasiswa."""
         user = User.objects.create(
             username=validated_data['nim'],
             email=validated_data['email'],
@@ -106,7 +101,6 @@ class RegisterMahasiswaSerializer(serializers.ModelSerializer):
 
 
 class RegisterDosenSerializer(serializers.ModelSerializer):
-    # Deklarasi eksplisit field yang dibutuhkan untuk input/validasi
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True, label="Konfirmasi Kata Sandi")
     email = serializers.EmailField(required=True, write_only=True)
@@ -133,16 +127,12 @@ class RegisterDosenSerializer(serializers.ModelSerializer):
         fields = ['nik', 'jurusan_id', 'email', 'password', 'password2', 'nama_lengkap']
 
     def validate(self, attrs):
-        """Validasi data tambahan (password, keunikan User)."""
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Konfirmasi kata sandi tidak cocok."})
 
-        # Cek keunikan username (NIK) di tabel User
         if User.objects.filter(username=attrs['nik']).exists():
-             # Pesan untuk kasus username User bentrok
             raise serializers.ValidationError({"nik": "NIK ini sudah terdaftar sebagai username pengguna lain."})
 
-        # Cek keunikan email di tabel User
         if User.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Pengguna dengan email ini sudah terdaftar."})
 
@@ -153,7 +143,6 @@ class RegisterDosenSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """Membuat instance User dan Dosen."""
         user = User.objects.create(
             username=validated_data['nik'],
             email=validated_data['email'],
@@ -175,3 +164,36 @@ class LoginSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=['mahasiswa', 'dosen'])
     identifier = serializers.CharField(label="NIM / NIK")
     password = serializers.CharField(write_only=True)
+
+
+# --- Password Reset Serializers ---
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No user is registered with this email address.")
+        return value
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+
+        try:
+            uid = force_str(urlsafe_base64_decode(attrs['uid']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({"uid": "Invalid user ID."})
+
+        if not default_token_generator.check_token(user, attrs['token']):
+            raise serializers.ValidationError({"token": "Invalid or expired token."})
+
+        attrs['user'] = user
+        return attrs
