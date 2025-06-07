@@ -1,3 +1,4 @@
+import datetime
 from tokenize import TokenError
 
 from django.contrib import messages
@@ -157,9 +158,7 @@ class LogoutView(drf_views.APIView):
 # --- Password Reset Views (Template-based) ---
 class PasswordResetRequestView(View):
     form_template_name = 'registration/password_reset_request_form.html'
-
     success_url_name = 'password_reset_done'
-
     serializer_class = PasswordResetRequestSerializer
 
     def get(self, request, *args, **kwargs):
@@ -167,7 +166,7 @@ class PasswordResetRequestView(View):
         return render(request, self.form_template_name, {'form': self.serializer_class()})
 
     def post(self, request, *args, **kwargs):
-
+        current_year = datetime.datetime.now().year
         serializer = self.serializer_class(data=request.POST)
 
         if serializer.is_valid():
@@ -186,7 +185,7 @@ class PasswordResetRequestView(View):
             text_content = f"""
 Hello {user.get_full_name() or user.username},
 
-You've requested to reset your password for your Digita Admin account.
+You've requested to reset your password for your Digita User Account.
 
 Please click the link below or copy and paste it into your browser to reset your password:
 {reset_url}
@@ -203,24 +202,122 @@ Digita Admin Team
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Password Reset Request</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Request - Digita Admin</title>
+    <style>
+        body {{
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }}
+        .email-container {{
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+        }}
+        .header {{
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eeeeee;
+            margin-bottom: 20px;
+        }}
+        .header img {{
+            max-width: 150px;
+            height: auto;
+        }}
+        .content-body {{
+            font-size: 16px;
+            color: #333;
+        }}
+        .content-body p {{
+            margin-bottom: 15px;
+        }}
+        .button-container {{
+            text-align: center;
+            margin: 30px 0;
+        }}
+        .button {{
+            background-color: #3498DB; 
+            color: white !important; 
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 16px;
+            mso-padding-alt: 0px; 
+        }}
+        
+        .button a {{
+            color: white !important;
+            text-decoration: none;
+            display: block;
+            padding: 12px 25px;
+        }}
+        .link-text {{
+            word-break: break-all;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #555;
+        }}
+        .footer {{
+            font-size: 12px;
+            color: #555; 
+        }}
+        .footer p {{
+            margin: 5px 0;
+        }}
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2c3e50;">Password Reset Request</h2>
-        <p>Hello <strong>{user.get_full_name() or user.username}</strong>,</p>
-        <p>You've requested to reset your password for your Digita Admin account.</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{reset_url}" style="background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                Reset Password
-            </a>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://s14.gifyu.com/images/bxCHa.png" alt="Digita Admin Logo"> </div>
+        <div class="content-body">
+            <h2 style="color: #2c3e50; text-align: center; margin-top: 0;">Password Reset Request</h2>
+            <p>Hello <strong>{user.get_full_name() or user.username}</strong>,</p>
+            <p>We received a request to reset the password for your Digita User Account. If you made this request, please click the button below to set a new password:</p>
+
+            <div class="button-container">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                        <td align="center" bgcolor="#007bff" style="border-radius: 5px;">
+                            <a href="{reset_url}" target="_blank" style="font-size: 16px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 5px; padding: 12px 25px; border: 1px solid #007bff; display: inline-block; font-weight: bold;">
+                                Reset Your Password
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <p>If the button above doesn't work, you can also copy and paste the following link into your web browser:</p>
+            <p class="link-text">{reset_url}</p>
+
+            <p>For security reasons, this link is valid for **24 hours** from the time it was sent. After this period, you will need to submit a new password reset request.</p>
+
+            <p>If you did not request a password reset, please disregard this email. Your current password will remain unchanged.</p>
         </div>
-        <p>Or copy and paste this link in your browser:</p>
-        <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 3px;">{reset_url}</p>
-        <p><small>This link will expire in 24 hours for security reasons.</small></p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p><small>If you didn't request this password reset, you can safely ignore this email.</small></p>
-        <p>Best regards,<br><strong>Digita Admin Team</strong></p>
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 30px; border-top: 1px solid #eeeeee;">
+            <tr>
+                <td style="padding-top: 20px; text-align: center; font-size: 12px; color: #555;">
+                    <p style="margin: 5px 0; color: #555;">Best regards,</p>
+                    <p style="margin: 5px 0; color: #555;"><strong>The Digita Admin Team</strong></p>
+                    <p style="margin: 5px 0; color: #555;">&copy; {current_year} Digita Admin. All rights reserved.</p>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>
@@ -245,7 +342,6 @@ Digita Admin Team
         else:
             messages.error(request, "Please check the form for errors.")
             return render(request, self.form_template_name, {'form': serializer})
-
 
 
 class PasswordResetConfirmView(View):
