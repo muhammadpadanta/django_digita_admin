@@ -3,17 +3,28 @@ from pathlib import Path
 from datetime import timedelta
 import dj_database_url
 
+# --- Core Django Settings ---
+# Defines the base directory of the project.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# A secret key for a particular Django installation. This is used to provide cryptographic signing.
+# It's loaded from an environment variable for security, with a fallback for local development.
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-secret-key-fallback')
 
+# A boolean that turns on/off debug mode. Never have debug mode enabled in a production environment.
+# '1' is treated as True, otherwise False.
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
+# A list of strings representing the host/domain names that this Django site can serve.
+# It's populated from an environment variable, splitting a space-separated string.
 ALLOWED_HOSTS_STRING = os.environ.get('ALLOWED_HOSTS')
 ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(' ') if ALLOWED_HOSTS_STRING else ['localhost', '127.0.0.1']
 
 
+# --- Application Definitions ---
+# A list of all Django applications that are activated in this Django project.
 INSTALLED_APPS = [
+    'django_rich',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -29,10 +40,13 @@ INSTALLED_APPS = [
     'tugas_akhir.apps.TugasAkhirConfig',
 ]
 
+# --- Middleware Configuration ---
+# A list of middleware to be executed during the request/response processing.
+# Order is important.
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # For serving static files in production
+    'corsheaders.middleware.CorsMiddleware', # Handles CORS headers
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -41,13 +55,17 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# --- URL Configuration ---
+# The path to the root URLconf module for this project.
 ROOT_URLCONF = "digita_admin.urls"
 
+# --- Template Configuration ---
+# Settings for Django's template engine.
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / 'templates'],
-        "APP_DIRS": True,
+        "DIRS": [BASE_DIR / 'templates'], # Directories where Django should look for templates
+        "APP_DIRS": True, # Look for templates inside application directories
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -59,8 +77,14 @@ TEMPLATES = [
     },
 ]
 
+# --- WSGI Application ---
+# The path to the WSGI application object that Django's built-in servers will use.
 WSGI_APPLICATION = "digita_admin.wsgi.application"
 
+# --- Database Configuration ---
+# Configures the project's database connection.
+# Uses dj_database_url to parse the DATABASE_URL environment variable.
+# Provides a fallback to individual environment variables if DATABASE_URL is not set.
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
@@ -81,6 +105,8 @@ if not DATABASES['default']:
     }
 
 
+# --- Password Validation ---
+# A list of validators that are used to check the strength of user passwords.
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
@@ -89,59 +115,78 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# --- Internationalization & Localization ---
+# Settings for language, time zone, and translation support.
 LANGUAGE_CODE = "id"
 TIME_ZONE = "Asia/Jakarta"
-USE_I18N = True
-USE_TZ = True
+USE_I18N = True # Enable Django's translation system
+USE_TZ = True   # Enable timezone-aware datetimes
 
+# Directory where translation files are stored.
 LOCALE_PATHS = [
     BASE_DIR / 'locale',
-]
+    ]
 
+# --- Static Files Configuration (CSS, JavaScript, Images) ---
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# --- Default Primary Key ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Django REST Framework Settings ---
+# Configures default settings for Django REST Framework.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
 
+# --- Simple JWT (JSON Web Token) Settings ---
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120), # Lifespan of an access token
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),     # Lifespan of a refresh token
+    "ROTATE_REFRESH_TOKENS": False,                  # If True, a new refresh token is issued when one is used
+    "BLACKLIST_AFTER_ROTATION": False,               # If True, old refresh tokens are added to a blacklist
 }
 
+# --- Deployment Specific Settings (Railway) ---
+# Fetches the application URL from Railway's environment variables.
 RAILWAY_APP_URL = os.environ.get('RAILWAY_APP_URL')
 
+# A list of trusted origins for unsafe requests (e.g., POST).
+# Automatically adds the Railway app URL if it exists.
 CSRF_TRUSTED_ORIGINS = []
 if RAILWAY_APP_URL:
     CSRF_TRUSTED_ORIGINS.append(RAILWAY_APP_URL)
 
+# --- CORS (Cross-Origin Resource Sharing) Settings ---
+# Controls which domains are allowed to make cross-origin requests to your API.
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 CORS_ALLOWED_ORIGINS_STRING = os.environ.get('CORS_ALLOWED_ORIGINS')
 CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_STRING.split(' ') if CORS_ALLOWED_ORIGINS_STRING else []
 
+# Fallback to allow all origins if no specific origins are defined and CORS_ALLOW_ALL_ORIGINS is not False.
 if not CORS_ALLOWED_ORIGINS and not CORS_ALLOW_ALL_ORIGINS:
     CORS_ALLOW_ALL_ORIGINS = True
 
+# --- Custom Authentication Backends ---
+# Specifies the authentication backends to use for authenticating users.
 AUTHENTICATION_BACKENDS = [
-    'users.backends.NimNikAuthBackend',
-    'django.contrib.auth.backends.ModelBackend',
+    'users.backends.NimNikAuthBackend', # Custom backend
+    'django.contrib.auth.backends.ModelBackend', # Default Django backend
 ]
 
+# --- Environment Variable Loading ---
+# Attempts to load environment variables from a .env file for local development.
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# Email settings
+# --- Email Settings ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('BREVO_EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('BREVO_EMAIL_PORT', 587))
@@ -150,4 +195,5 @@ EMAIL_HOST_USER = os.environ.get('BREVO_EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('BREVO_EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('BREVO_DEFAULT_FROM_EMAIL', 'noreply@muhammadpadanta.tech')
 
+# --- Frontend URL Configuration ---
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')

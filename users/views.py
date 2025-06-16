@@ -340,8 +340,8 @@ Digita Admin Team
             return redirect(self.success_url_name)
 
         else:
-            messages.error(request, "Please check the form for errors.")
-            return render(request, self.form_template_name, {'form': serializer})
+            messages.success(request, 'If an account with that email exists, a reset link has been sent.')
+            return redirect(self.success_url_name)
 
 
 class PasswordResetConfirmView(View):

@@ -9,3 +9,7 @@ sqlparse==0.5.3
 gunicorn
 dj-database-url
 whitenoise
+pytest
+pytest-django
+django-rich
+pytest-rich

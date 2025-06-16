@@ -21,6 +21,7 @@ services:
   web:
     build: .
     # command: python manage.py runserver 0.0.0.0:8000 # Perintah jika TIDAK pakai entrypoint.sh
+    tty: true
     entrypoint: /app/entrypoint.sh
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     volumes:
