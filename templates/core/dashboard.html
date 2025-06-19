@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-block">
+  <header class="dashboard-header">
+    <h1>Dashboard</h1>
+    <div class="header-actions">
+      <button><i class="fas fa-user-circle"></i></button>
+      <button><i class="fas fa-cog"></i></button>
+    </div>
+  </header>
+
+  <section class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Mahasiswa Terdaftar</h3>
+      <p>{{ total_mahasiswa|default:"130" }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Dosen Terdaftar</h3>
+      <p>{{ total_dosen|default:"60" }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Dokumen Mahasiswa</h3>
+      <p>{{ total_dokumen|default:"640" }}</p>
+    </div>
+  </section>
+
+  <section class="panels-grid">
+    <div class="panel">
+      <h3>Aktivitas Terbaru</h3>
+      <table class="activity-table">
+        <thead>
+        <tr>
+          <th>User</th>
+          <th>Action</th>
+          <th>Datetime</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for activity in activities %}
+        <tr>
+          <td data-label="User">{{ activity.user }}</td>
+          <td data-label="Action">{{ activity.action }}</td>
+          <td data-label="Datetime">{{ activity.datetime|date:"d M Y, H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="empty-state">Tidak ada aktivitas terbaru.</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>Overview Timeline</h3>
+      <div class="timeline">
+        {% for item in timeline_items %}
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <h4>{{ item.title }}</h4>
+            <p>{{ item.start_date|date:"d M Y" }} - {{ item.end_date|date:"d M Y" }}</p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="empty-state">Timeline tidak tersedia.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

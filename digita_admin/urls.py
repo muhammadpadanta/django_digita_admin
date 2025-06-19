@@ -11,4 +11,6 @@ urlpatterns = [
 
     # Includes all URL patterns from the 'tugas_akhir' application under the 'api/ta/' prefix.
     path('api/ta/', include('tugas_akhir.urls')),
+
+    path('', include('core.urls')),
 ]

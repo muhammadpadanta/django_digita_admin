@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic",
+    #"whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     'rest_framework',
     'rest_framework_simplejwt',
@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'users.apps.UsersConfig',
     'tugas_akhir.apps.TugasAkhirConfig',
+    'django.forms',
+    'core.apps.CoreConfig',
 ]
 
 # --- Middleware Configuration ---
@@ -85,22 +87,25 @@ WSGI_APPLICATION = "digita_admin.wsgi.application"
 # Configures the project's database connection.
 # Uses dj_database_url to parse the DATABASE_URL environment variable.
 # Provides a fallback to individual environment variables if DATABASE_URL is not set.
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600
-    )
-}
 
-if not DATABASES['default']:
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600
+        )
+    }
+else:
     DATABASES = {
         'default': {
             'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
-            'NAME': os.environ.get('DB_NAME'),
-            'USER': os.environ.get('DB_USER'),
-            'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': os.environ.get('DB_HOST'),
-            'PORT': os.environ.get('DB_PORT'),
+            'NAME': os.environ.get('DB_NAME', 'digita_db'),
+            'USER': os.environ.get('DB_USER', 'digitaadmin'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
 
@@ -128,9 +133,17 @@ LOCALE_PATHS = [
     ]
 
 # --- Static Files Configuration (CSS, JavaScript, Images) ---
+# The URL to use when referring to static files located in STATIC_ROOT.
 STATIC_URL = "static/"
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    ]
+
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Default Primary Key ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -197,3 +210,9 @@ DEFAULT_FROM_EMAIL = os.environ.get('BREVO_DEFAULT_FROM_EMAIL', 'noreply@muhamma
 
 # --- Frontend URL Configuration ---
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+LOGIN_URL = 'core:login'
+LOGIN_REDIRECT_URL = 'core:dashboard'
+LOGOUT_REDIRECT_URL = 'core:home'
+
+FORM_RENDERER = "django.forms.renderers.DjangoTemplates"

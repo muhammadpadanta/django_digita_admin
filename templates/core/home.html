@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Selamat Datang{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <img src="{% static 'core/img/digita_login_poster.png' %}" alt="Digital Thesis Illustration" class="home-illustration">
+
+    <h1 class="home-title">
+        Selamat Datang di <span>DigiTA</span>
+    </h1>
+
+    <p class="home-description">
+        Sistem Manajemen Tugas Akhir untuk memudahkan proses administrasi, bimbingan, dan monitoring skripsi Anda dari awal hingga akhir.
+    </p>
+
+    <a href="{% url 'core:login' %}" class="btn btn-primary">MASUK KE SISTEM</a>
+</div>
+{% endblock %}
