@@ -1,0 +1,161 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Pengumuman{% endblock %}
+
+{% block content %}
+<div class="content-block">
+  <header class="dashboard-header">
+    <h1>Pengumuman</h1>
+    <div class="header-actions">
+      <button><i class="fas fa-user-circle"></i></button>
+      <button><i class="fas fa-cog"></i></button>
+    </div>
+  </header>
+
+  <div class="page-actions-container">
+    <button class="btn btn-primary" id="add-announcement-btn">
+      <i class="fas fa-plus"></i> Tambah Pengumuman
+    </button>
+  </div>
+
+  <div class="announcements-container">
+
+    <div class="announcement-card">
+      <div class="announcement-header">
+        <h3 class="announcement-title">Pembaruan Jadwal Ujian Akhir Semester</h3>
+        <div class="announcement-actions">
+          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+        </div>
+      </div>
+      <p class="announcement-period">
+        <i class="fas fa-clock"></i> Periode: 20 Des 2024 - 10 Jan 2025
+      </p>
+      <p class="announcement-description">
+        Diberitahukan kepada seluruh mahasiswa bahwa telah terjadi pembaruan pada jadwal Ujian Akhir Semester (UAS) untuk semester ganjil. Mohon untuk memeriksa jadwal terbaru yang terlampir pada pengumuman ini. Pastikan Anda melihat jadwal sesuai dengan program studi masing-masing.
+      </p>
+      <div class="announcement-attachment">
+        <a href="#" download>
+          <i class="fas fa-paperclip"></i> Jadwal_UAS_Terbaru.pdf
+        </a>
+      </div>
+    </div>
+
+    <div class="announcement-card">
+      <div class="announcement-header">
+        <h3 class="announcement-title">Libur Awal Semester Genap</h3>
+        <div class="announcement-actions">
+          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+        </div>
+      </div>
+      <p class="announcement-period">
+        <i class="fas fa-clock"></i> Periode: 15 Jan 2025 - 20 Jan 2025
+      </p>
+      <p class="announcement-description">
+        Sehubungan dengan akan dimulainya semester genap, maka diumumkan bahwa kegiatan akademik akan diliburkan. Kegiatan perkuliahan akan dimulai kembali pada tanggal 21 Januari 2025. Selamat menikmati masa libur.
+      </p>
+    </div>
+
+    <div class="announcement-card">
+      <div class="announcement-header">
+        <h3 class="announcement-title">Workshop Penulisan Karya Ilmiah</h3>
+        <div class="announcement-actions">
+          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+        </div>
+      </div>
+      <p class="announcement-period">
+        <i class="fas fa-clock"></i> Periode: 05 Feb 2025 - 06 Feb 2025
+      </p>
+      <p class="announcement-description">
+        Fakultas akan mengadakan workshop wajib mengenai teknik penulisan karya ilmiah bagi mahasiswa tingkat akhir. Workshop ini bertujuan untuk meningkatkan kualitas skripsi dan tugas akhir. Informasi pendaftaran dan detail acara dapat dilihat pada lampiran.
+      </p>
+      <div class="announcement-attachment">
+        <a href="#" download>
+          <i class="fas fa-paperclip"></i> Panduan_Workshop_Karya_Ilmiah.pdf
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="pagination">
+    <a href="#" class="page-arrow">&laquo;</a>
+    <a href="#" class="page-number active">1</a>
+    <a href="#" class="page-number">2</a>
+    <a href="#" class="page-number">3</a>
+    <a href="#" class="page-arrow">&raquo;</a>
+  </nav>
+
+</div>
+
+
+<div id="announcement-modal" class="modal-backdrop" style="display: none;">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h3 class="modal-title">Tambah Pengumuman Baru</h3>
+      <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form>
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="ann-title">Judul Pengumuman</label>
+          <input type="text" id="ann-title" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="ann-desc">Deskripsi</label>
+          <textarea id="ann-desc" name="description" rows="5" required></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ann-start-date">Tanggal Mulai</label>
+            <input type="date" id="ann-start-date" name="start_date" required>
+          </div>
+          <div class="form-group">
+            <label for="ann-end-date">Tanggal Selesai</label>
+            <input type="date" id="ann-end-date" name="end_date" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ann-attachment">Lampiran (Opsional)</label>
+          <input type="file" id="ann-attachment" name="attachment" class="file-input">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('announcement-modal');
+    const openBtn = document.getElementById('add-announcement-btn');
+    const closeBtn = document.getElementById('modal-close-btn');
+    const cancelBtn = document.getElementById('modal-cancel-btn');
+
+    function openModal() {
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  });
+</script>
+{% endblock %}

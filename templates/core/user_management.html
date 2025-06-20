@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="content-block">
+    <header class="dashboard-header">
+        <h1>User Management</h1>
+        <div class="header-actions">
+            <button title="Profile Settings"><i class="fas fa-user-circle"></i></button>
+            <button title="General Settings"><i class="fas fa-cog"></i></button>
+        </div>
+    </header>
+
+    <div class="main-panel">
+        <nav class="tabs-nav">
+            <a href="#" class="active">Semua User</a>
+            <a href="#">Mahasiswa</a>
+            <a href="#">Dosen</a>
+        </nav>
+
+        <div class="action-bar">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Cari user...">
+            </div>
+            <div class="buttons-wrapper">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tambah User
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>NAMA</th>
+                    <th>NIM/NIK</th>
+                    <th>EMAIL</th>
+                    <th>DOSPEN/MAHASISWA</th>
+                    <th>AKSI</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Abyan Putra Tama</span>
+                            <span class="user-role">Animasi</span>
+                        </div>
+                    </td>
+                    <td>4467152497</td>
+                    <td>abyan121@gmail.com</td>
+                    <td>Dr. Budi Santoso</td>
+                    <td class="action-icons">
+                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Erlangga Adhitama</span>
+                            <span class="user-role">Teknik Informatika</span>
+                        </div>
+                    </td>
+                    <td>3312781254</td>
+                    <td>erlang71@gmail.com</td>
+                    <td>Dodi Wijaksono, S.Tr. Kom</td>
+                    <td class="action-icons">
+                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Miftahul Agus, M.Eng</span>
+                            <span class="user-role">Animasi</span>
+                        </div>
+                    </td>
+                    <td>213789</td>
+                    <td>miftah@polibatam.ac.id</td>
+                    <td>6 Mahasiswa</td>
+                    <td class="action-icons">
+                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Indah Dwi Intan</span>
+                            <span class="user-role">TRPL</span>
+                        </div>
+                    </td>
+                    <td>4423501045</td>
+                    <td>indah82@gmail.com</td>
+                    <td>Dodi Wijaksono, S.Tr. Kom</td>
+                    <td class="action-icons">
+                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Dr. Budi Santoso</span>
+                            <span class="user-role">Teknik Informatika</span>
+                        </div>
+                    </td>
+                    <td>112732</td>
+                    <td>budi@polibatam.ac.id</td>
+                    <td>10 Mahasiswa</td>
+                    <td class="action-icons">
+                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="pagination">
+            <a href="#" class="page-arrow">&laquo;</a>
+            <a href="#" class="page-number active">1</a>
+            <a href="#" class="page-number">2</a>
+            <a href="#" class="page-number">3</a>
+            <a href="#" class="page-number">4</a>
+            <a href="#" class="page-number">5</a>
+            <a href="#" class="page-number">6</a>
+            <a href="#" class="page-arrow">&raquo;</a>
+        </nav>
+    </div>
+</div>
+{% endblock %}

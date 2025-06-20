@@ -12,6 +12,10 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+  <link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/user_and_document.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/announcements.css' %}">
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
 </head>
 <body>
@@ -20,25 +24,30 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <img src="{% static 'core/img/digita_login_logo.png' %}" alt="DigiTA Logo" class="sidebar-logo">
+      <button class="mobile-nav-toggle" aria-label="Toggle Navigation">
+        <i class="fas fa-bars icon-open"></i>
+        <i class="fas fa-times icon-close"></i>
+      </button>
     </div>
 
     <nav class="sidebar-nav">
+
       <p class="nav-section-title">Main</p>
       <a href="{% url 'core:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <i class="fas fa-tachometer-alt nav-icon"></i>
         <span>Dashboard</span>
       </a>
-      <a href="#">
+      <a href="{% url 'core:user_management' %}" class="{% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
         <i class="fas fa-users nav-icon"></i>
         <span>User Management</span>
       </a>
-      <a href="#">
+      <a href="{% url 'core:documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}active{% endif %}">
         <i class="fas fa-file-alt nav-icon"></i>
         <span>Documents</span>
       </a>
-      <a href="#">
-        <i class="fas fa-clock nav-icon"></i>
-        <span>Timeline</span>
+      <a href="{% url 'core:announcements' %}" class="{% if request.resolver_match.url_name == 'announcements' %}active{% endif %}">
+        <i class="fas fa-bullhorn nav-icon"></i>
+        <span>Pengumuman</span>
       </a>
 
       <p class="nav-section-title">Other</p>
@@ -46,12 +55,22 @@
         <i class="fas fa-chart-bar nav-icon"></i>
         <span>Report</span>
       </a>
+
+      {% if user.is_authenticated %}
+      <form class="logout-form-nav" action="{% url 'core:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="nav-logout-btn" title="Logout">
+          <i class="fas fa-sign-out-alt nav-icon"></i>
+          <span>Logout</span>
+        </button>
+      </form>
+      {% endif %}
     </nav>
 
     <div class="sidebar-footer">
       {% if user.is_authenticated %}
       <span>Welcome, {{ user.get_full_name|default:user.username }}!</span>
-      <form action="{% url 'core:logout' %}" method="post">
+      <form action="{% url 'core:logout' %}" method="post" class="logout-form-footer">
         {% csrf_token %}
         <button type="submit" class="btn-logout" title="Logout">
           <i class="fas fa-sign-out-alt"></i>
@@ -73,6 +92,19 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    if (mobileNavToggle && sidebar) {
+      mobileNavToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('nav-open');
+      });
+    }
+  });
+</script>
 
 </body>
 </html>

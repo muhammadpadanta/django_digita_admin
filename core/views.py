@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from .forms import AdminLoginForm
+from django.contrib.auth.models import User
 
 class HomeView(TemplateView):
     template_name = 'core/home.html'
@@ -55,3 +56,35 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['role'] = 'Staff'
 
         return context
+
+
+class UserManagementView(LoginRequiredMixin, TemplateView):
+    template_name = 'core/user_management.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get the active tab from the URL query parameter (e.g., /users?tab=mahasiswa)
+        active_tab = self.request.GET.get('tab', 'semua') # Default to 'semua'
+
+
+        if active_tab == 'mahasiswa':
+            # This assumes you have a related profile with a 'role' field.
+            # Adapt this query to your models.
+            users_list = User.objects.filter(userprofile__role='mahasiswa').select_related('userprofile')
+        elif active_tab == 'dosen':
+            users_list = User.objects.filter(userprofile__role='dosen').select_related('userprofile')
+        else:
+            # 'Semua User' tab shows all non-superuser accounts
+            users_list = User.objects.filter(is_superuser=False)
+
+        context['users'] = users_list
+        context['active_tab'] = active_tab
+        return context
+
+
+class DocumentsView(LoginRequiredMixin, TemplateView):
+    template_name = 'core/documents.html'
+
+class AnnouncementsView(LoginRequiredMixin, TemplateView):
+    template_name = 'core/announcements.html'

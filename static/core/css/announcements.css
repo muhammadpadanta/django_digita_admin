@@ -1,0 +1,165 @@
+/* === ANNOUNCEMENTS PAGE STYLES === */
+
+.page-actions-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+}
+
+.announcements-container {
+    display: grid;
+    gap: 24px;
+}
+
+.announcement-card {
+    background-color: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    border-left: 5px solid #0F47AD;
+}
+
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.announcement-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #343a40;
+    margin: 0;
+}
+
+.announcement-actions a {
+    color: #6c757d;
+    margin-left: 8px;
+    font-size: 1.1em;
+    text-decoration: none;
+    border-radius: 50%; /* Make the link area circular */
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.announcement-actions a:hover {
+    color: #0F47AD;
+    background-color: #e9ecef; /* Add a background on hover for better feedback */
+}
+
+.announcement-actions a[title="Delete"]:hover {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.announcement-period {
+    font-size: 0.9em;
+    color: #6c757d;
+    font-weight: 500;
+    margin: 0 0 16px 0;
+}
+.announcement-period i {
+    margin-right: 8px;
+}
+
+.announcement-description {
+    color: #495057;
+    line-height: 1.7;
+    margin: 0 0 16px 0;
+}
+
+.announcement-attachment a {
+    color: #0F47AD;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.announcement-attachment a:hover {
+    text-decoration: underline;
+}
+.announcement-attachment i {
+    margin-right: 8px;
+}
+
+.empty-state-panel {
+    background-color: #fff;
+    padding: 50px;
+    border-radius: 12px;
+    text-align: center;
+    border: 2px dashed #e0e0e0;
+}
+.empty-state-icon {
+    font-size: 3em;
+    color: #0F47AD;
+    margin-bottom: 20px;
+}
+
+/* === PAGINATION STYLES === */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 32px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.pagination a {
+    color: #0F47AD;
+    text-decoration: none;
+    padding: 10px 18px;
+    margin: 0;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s;
+    border: 1px solid #dee2e6;
+    font-weight: 600;
+}
+.pagination a:hover {
+    background-color: #f1f3f5;
+    border-color: #ced4da;
+}
+.pagination a.active {
+    background-color: #0F47AD;
+    color: white;
+    border-color: #0F47AD;
+}
+
+
+/* === MEDIA QUERIES FOR RESPONSIVENESS === */
+@media (max-width: 768px) {
+    .page-actions-container .btn {
+        width: 100%; /* Make button full-width on mobile */
+    }
+
+    .announcements-container {
+        gap: 16px; /* Reduce space between cards */
+    }
+
+    .announcement-card {
+        padding: 16px; /* Reduce padding inside cards */
+    }
+
+    .announcement-header {
+        flex-direction: column; /* Stack title and actions vertically */
+        align-items: flex-start;
+        gap: 12px; /* Add space between stacked title and actions */
+    }
+
+    .announcement-title {
+        font-size: 1.15em; /* Slightly reduce title font size */
+    }
+
+    .announcement-actions {
+        margin-left: 0;
+        align-self: flex-end; /* Push actions to the right side of the card */
+    }
+
+    .pagination a {
+        padding: 8px 14px; /* Make pagination buttons smaller */
+        font-size: 0.9em;
+    }
+}

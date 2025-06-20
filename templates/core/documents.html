@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Documents{% endblock %}
+
+{% block content %}
+<div class="content-block">
+    <header class="dashboard-header">
+        <h1>Documents</h1>
+        <div class="header-actions">
+            <button title="Profile Settings"><i class="fas fa-user-circle"></i></button>
+            <button title="General Settings"><i class="fas fa-cog"></i></button>
+        </div>
+    </header>
+
+    <div class="main-panel">
+        <div class="action-bar">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Cari dokumen...">
+            </div>
+            <div class="buttons-wrapper">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>NAMA DOKUMEN</th>
+                    <th>STATUS</th>
+                    <th>PEMILIK</th>
+                    <th>WAKTU UPLOAD</th>
+                    <th>AKSI</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>BAB II: Landasan Teori</td>
+                    <td>
+                        <span class="status-badge status-pending">Pending</span>
+                    </td>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Abyan Putra Tama</span>
+                            <span class="user-role">Animasi</span>
+                        </div>
+                    </td>
+                    <td>14 April 2025, 10:00</td>
+                    <td class="action-icons">
+                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>BAB I: Pendahuluan</td>
+                    <td>
+                        <span class="status-badge status-disetujui">Disetujui</span>
+                    </td>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Agil Angga Anggara</span>
+                            <span class="user-role">Teknik Informatika</span>
+                        </div>
+                    </td>
+                    <td>08 Maret 2025, 14:00</td>
+                    <td class="action-icons">
+                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>BAB III: Analisis dan Perancangan</td>
+                    <td>
+                        <span class="status-badge status-revisi">Revisi</span>
+                    </td>
+                    <td>
+                        <div class="user-info">
+                            <span class="user-name">Maishka Putri</span>
+                            <span class="user-role">TRPL</span>
+                        </div>
+                    </td>
+                    <td>29 April 2025, 12:00</td>
+                    <td class="action-icons">
+                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
+                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="pagination">
+            <a href="#" class="page-arrow">&laquo;</a>
+            <a href="#" class="page-number active">1</a>
+            <a href="#" class="page-number">2</a>
+            <a href="#" class="page-number">3</a>
+            <a href="#" class="page-number">4</a>
+            <a href="#" class="page-number">5</a>
+            <a href="#" class="page-number">6</a>
+            <a href="#" class="page-arrow">&raquo;</a>
+        </nav>
+    </div>
+</div>
+{% endblock %}
