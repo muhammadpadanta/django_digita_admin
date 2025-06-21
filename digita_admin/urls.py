@@ -1,4 +1,4 @@
-# your_project/urls.py
+# digita_admin/urls.py
 from django.urls import path, include
 from django.contrib import admin
 

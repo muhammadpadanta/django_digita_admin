@@ -31,7 +31,7 @@ class PasswordResetRequestView(View):
     - Renders a form on GET.
     - On POST, validates the email, generates a reset link, and sends it.
     """
-    form_template_name = 'registration/password_reset_request_form.html'
+    form_template_name = 'password_reset/password_reset_request_form.html'
     success_url_name = 'password_reset_done'
     serializer_class = PasswordResetRequestSerializer
 
@@ -91,8 +91,8 @@ class PasswordResetConfirmView(View):
     - On GET, validates the token and displays the password change form.
     - On POST, validates the new password and saves it.
     """
-    form_template_name = 'registration/password_reset_confirm_form.html'
-    invalid_token_template_name = 'registration/password_reset_invalid_token.html'
+    form_template_name = 'password_reset/password_reset_confirm_form.html'
+    invalid_token_template_name = 'password_reset/password_reset_invalid_token.html'
     success_url_name = 'password_reset_complete_page'
     serializer_class = PasswordResetConfirmSerializer
 
