@@ -1,14 +1,20 @@
 from rest_framework import serializers
 from users.serializers import JurusanSerializer
-from users.models import Mahasiswa, Dosen
+from users.models import Mahasiswa, Dosen, ProgramStudi
 from .models import RequestDosen, TugasAkhir
 
-# --- Nested Serializers untuk Read-Only Info ---
+class ProgramStudiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgramStudi
+        fields = ['id', 'nama_prodi']
+
+    # --- Nested Serializers untuk Read-Only Info ---
 class MahasiswaSimpleSerializer(serializers.ModelSerializer):
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
+    program_studi = ProgramStudiSerializer(read_only=True)
     class Meta:
         model = Mahasiswa
-        fields = ['user_id', 'nim', 'nama_lengkap']
+        fields = ['user_id', 'nim', 'nama_lengkap', 'program_studi']
 
 class DosenSimpleSerializer(serializers.ModelSerializer):
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
