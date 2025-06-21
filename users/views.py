@@ -32,7 +32,8 @@ class PasswordResetRequestView(View):
     - On POST, validates the email, generates a reset link, and sends it.
     """
     form_template_name = 'password_reset/password_reset_request_form.html'
-    success_url_name = 'password_reset_done'
+    # CORRECTED: Added the 'users:' namespace here
+    success_url_name = 'users:password_reset_done'
     serializer_class = PasswordResetRequestSerializer
 
     def get(self, request, *args, **kwargs):
@@ -55,8 +56,10 @@ class PasswordResetRequestView(View):
 
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # CORRECTED: Added the 'users:' namespace here
         reset_url = request.build_absolute_uri(
-            reverse('password_reset_confirm_page', kwargs={'uidb64': uid, 'token': token})
+            reverse('users:password_reset_confirm_page', kwargs={'uidb64': uid, 'token': token})
         )
 
         subject = "Password Reset Request - Digita Admin"
@@ -93,7 +96,7 @@ class PasswordResetConfirmView(View):
     """
     form_template_name = 'password_reset/password_reset_confirm_form.html'
     invalid_token_template_name = 'password_reset/password_reset_invalid_token.html'
-    success_url_name = 'password_reset_complete_page'
+    success_url_name = 'users:password_reset_done'
     serializer_class = PasswordResetConfirmSerializer
 
     def get(self, request, uidb64=None, token=None, *args, **kwargs):
