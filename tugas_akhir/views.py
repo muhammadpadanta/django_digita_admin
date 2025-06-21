@@ -1,98 +1,127 @@
-from django.db import transaction
-from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.response import Response
+# tugas_akhir/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.db.models import Q
+from django.core.paginator import Paginator
 
-from .models import RequestDosen, TugasAkhir, Mahasiswa, Dosen
-from .serializers import (
-    RequestDosenCreateSerializer, RequestDosenListSerializer,
-    RequestDosenRespondSerializer
-)
-from .permissions import IsMahasiswa, IsDosen, IsRequestRecipientOrAdmin, IsMahasiswaOrDosen, IsOwnerOrRecipient
+from users.models import Mahasiswa
+from .models import Dokumen, TugasAkhir
+from .forms import DokumenEditForm
 
-class SupervisionRequestListCreateView(generics.ListCreateAPIView):
+def document_list_view(request):
     """
-    - GET: Lists requests.
-      - For Mahasiswa: lists their own sent requests.
-      - For Dosen: lists their incoming PENDING requests.
-    - POST: Creates a new supervision request (for Mahasiswa only).
+    Fetches all documents and renders them in the core/documents.html template.
     """
-    permission_classes = [permissions.IsAuthenticated, IsMahasiswaOrDosen]
+    search_query = request.GET.get('q', '')
 
-    def get_queryset(self):
-        """Dynamically filters the queryset based on the user's role."""
-        user = self.request.user
-        if hasattr(user, 'mahasiswa_profile'):
-            # Mahasiswa sees all their requests, ordered by most recent
-            return RequestDosen.objects.filter(mahasiswa=user.mahasiswa_profile).select_related('mahasiswa__user', 'dosen__user')
-        if hasattr(user, 'dosen_profile'):
-            # Dosen only sees PENDING requests addressed to them
-            return RequestDosen.objects.filter(dosen=user.dosen_profile, status='PENDING').select_related('mahasiswa__user', 'dosen__user')
-        return RequestDosen.objects.none()
+    # Start with the base queryset
+    document_queryset = Dokumen.objects.select_related(
+        'pemilik__user', 'pemilik__program_studi'
+    ).order_by('-uploaded_at')
 
-    def get_serializer_class(self):
-        """Returns the appropriate serializer for the action."""
-        if self.request.method == 'POST':
-            return RequestDosenCreateSerializer
-        return RequestDosenListSerializer
+    # If a search query is provided, filter the queryset
+    if search_query:
+        document_queryset = document_queryset.filter(
+            Q(nama_dokumen__icontains=search_query) |
+            Q(pemilik__user__first_name__icontains=search_query) |
+            Q(pemilik__user__last_name__icontains=search_query)
+        )
 
-    def perform_create(self, serializer):
-        """Handles the logic for creating a new request."""
-        mahasiswa_profile = self.request.user.mahasiswa_profile
-        if TugasAkhir.objects.filter(mahasiswa=mahasiswa_profile).exists():
-            raise ValidationError("Anda sudah terdaftar dalam proses Tugas Akhir.")
-        if RequestDosen.objects.filter(mahasiswa=mahasiswa_profile, status='PENDING').exists():
-            raise ValidationError("Anda sudah memiliki permintaan pembimbing yang PENDING.")
-        requested_dosen = serializer.validated_data['dosen']
-        if hasattr(requested_dosen.user, 'mahasiswa_profile') and requested_dosen.user.mahasiswa_profile == mahasiswa_profile:
-            raise ValidationError("Tidak bisa mengajukan diri sendiri sebagai pembimbing.")
-        serializer.save(mahasiswa=mahasiswa_profile, status='PENDING')
+    # Set up Pagination
+    paginator = Paginator(document_queryset, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'documents': page_obj,
+        'bab_choices': Dokumen.BAB_CHOICES,
+        'status_choices': Dokumen.STATUS_CHOICES,
+        'tugas_akhirs': TugasAkhir.objects.all(),
+        'mahasiswas': Mahasiswa.objects.select_related('user').all(),
+    }
 
+    return render(request, 'core/documents.html', context)
 
-class SupervisionRequestDetailUpdateView(generics.RetrieveUpdateAPIView):
+@login_required
+def serve_document_file_view(request, pk):
     """
-    - GET: Retrieves the details of a specific request.
-      - Accessible by the Mahasiswa who sent it or the Dosen who received it.
-    - PATCH: Updates a request.
-      - Primarily for a Dosen to respond (accept/reject).
+    Handles serving a file either for inline viewing or as a forced download.
     """
-    queryset = RequestDosen.objects.all().select_related('mahasiswa__user', 'dosen__user')
-    http_method_names = ['get', 'patch'] # Only allow GET and PATCH
+    document = get_object_or_404(Dokumen, pk=pk)
 
-    def get_permissions(self):
-        """
-        - For PATCH (responding), only the recipient Dosen is allowed.
-        - For GET (viewing), the owner Mahasiswa or recipient Dosen is allowed.
-        """
-        if self.request.method == 'PATCH':
-            return [permissions.IsAuthenticated(), IsDosen(), IsRequestRecipientOrAdmin()]
-        return [permissions.IsAuthenticated(), IsOwnerOrRecipient()]
+    # Check for a query parameter to decide the action
+    action = request.GET.get('action')
 
-    def get_serializer_class(self):
-        """Returns the appropriate serializer for the action."""
-        if self.request.method == 'PATCH':
-            return RequestDosenRespondSerializer
-        return RequestDosenListSerializer
+    if action == 'download':
+        # Force download by setting specific response headers
+        response = HttpResponse(document.file, content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
+        return response
+    else:
+        # Default to opening in a new tab (inline view)
+        # FileResponse is optimized for this and sets the correct Content-Type
+        return FileResponse(document.file.open('rb'))
 
-    @transaction.atomic
-    def perform_update(self, serializer):
-        """Handles the logic for responding to a request (from the old view)."""
-        request_instance = self.get_object()
-        new_status = serializer.validated_data.get('status')
 
-        if new_status == 'ACCEPTED':
-            mahasiswa_profile = request_instance.mahasiswa
-            dosen_profile = request_instance.dosen
-            if TugasAkhir.objects.filter(mahasiswa=mahasiswa_profile).exists():
-                raise ValidationError("Mahasiswa ini sudah memiliki data Tugas Akhir.")
+# --- VIEW for deleting documents ---
+@require_POST  # Ensures this view can only be accessed with a POST request
+@login_required
+def delete_document_view(request, pk):
+    """
+    Handles the deletion of a document and its associated file.
+    """
+    document = get_object_or_404(Dokumen, pk=pk)
 
-            TugasAkhir.objects.create(
-                mahasiswa=mahasiswa_profile,
-                dosen_pembimbing=dosen_profile,
-                judul=request_instance.rencana_judul,
-                deskripsi=request_instance.rencana_deskripsi
-            )
-            mahasiswa_profile.dosen_pembimbing = dosen_profile
-            mahasiswa_profile.save(update_fields=['dosen_pembimbing'])
+    try:
+        # First, delete the physical file from storage
+        document.file.delete(save=False)
+        # Then, delete the model record from the database
+        document.delete()
+        # Add a success message for the user
+        messages.success(request, f"Dokumen '{document.nama_dokumen}' telah berhasil dihapus.")
+    except Exception as e:
+        messages.error(request, f"Terjadi kesalahan saat menghapus dokumen: {e}")
 
-        serializer.save()
+    # Redirect back to the document list page
+    return redirect('tugas_akhir:document-list')
+
+@login_required
+def edit_document_view(request, pk):
+    document = get_object_or_404(Dokumen, pk=pk)
+
+    # You might want more robust permissions here, e.g., only staff/admins can edit
+    # if not request.user.is_staff:
+    #     return JsonResponse({'error': 'You do not have permission to edit.'}, status=403)
+
+    if request.method == 'POST':
+        form = DokumenEditForm(request.POST, request.FILES, instance=document)
+        if form.is_valid():
+            updated_doc = form.save()
+            response_data = {
+                'success': True,
+                'document': {
+                    'bab': updated_doc.get_bab_display(),
+                    'nama_dokumen': updated_doc.nama_dokumen,
+                    'status': updated_doc.get_status_display(),
+                    'pemilik_name': updated_doc.pemilik.user.get_full_name(),
+                    'pemilik_prodi': updated_doc.pemilik.program_studi.nama_prodi,
+                    'file_url': updated_doc.file.url if updated_doc.file else '#',
+                }
+            }
+            return JsonResponse(response_data)
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    else:
+        data = {
+            'tugas_akhir': document.tugas_akhir_id,
+            'bab': document.bab,
+            'nama_dokumen': document.nama_dokumen,
+            'status': document.status,
+            'pemilik': document.pemilik_id,
+            'current_file_url': document.file.url if document.file else None,
+            'current_file_name': document.file.name.split('/')[-1] if document.file else 'No file uploaded',
+        }
+        return JsonResponse(data)

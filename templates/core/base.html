@@ -43,7 +43,7 @@
         <i class="fas fa-users nav-icon"></i>
         <span>User Management</span>
       </a>
-      <a href="{% url 'core:documents' %}" class="{% if request.resolver_match.url_name == 'documents' %}active{% endif %}">
+      <a href="{% url 'tugas_akhir:document-list' %}" class="{% if request.resolver_match.url_name == 'document-list' %}active{% endif %}">
         <i class="fas fa-file-alt nav-icon"></i>
         <span>Documents</span>
       </a>

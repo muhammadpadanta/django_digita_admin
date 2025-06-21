@@ -14,11 +14,12 @@
     </header>
 
     <div class="main-panel">
+
         <div class="action-bar">
-            <div class="search-wrapper">
+            <form class="search-wrapper" method="get" action="{% url 'tugas_akhir:document-list' %}">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Cari dokumen...">
-            </div>
+                <input type="text" name="q" placeholder="Cari nama dokumen atau pemilik..." value="{{ search_query|default_if_none:'' }}">
+            </form>
             <div class="buttons-wrapper">
                 <button class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
@@ -30,6 +31,7 @@
             <table class="data-table">
                 <thead>
                 <tr>
+                    <th>BAB</th>
                     <th>NAMA DOKUMEN</th>
                     <th>STATUS</th>
                     <th>PEMILIK</th>
@@ -38,71 +40,298 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>BAB II: Landasan Teori</td>
+                {% for doc in documents %}
+                <tr data-row-id="{{ doc.pk }}">
+                    <td class="doc-bab">{{ doc.bab }}</td>
+                    <td class="doc-nama">{{ doc.nama_dokumen }}</td>
                     <td>
-                        <span class="status-badge status-pending">Pending</span>
+                        {% if doc.status == 'Disetujui' %}
+                        <span class="status-badge status-disetujui doc-status">Disetujui</span>
+                        {% elif doc.status == 'Revisi' %}
+                        <span class="status-badge status-revisi doc-status">Revisi</span>
+                        {% else %}
+                        <span class="status-badge status-pending doc-status">Pending</span>
+                        {% endif %}
                     </td>
                     <td>
-                        <div class="user-info">
-                            <span class="user-name">Abyan Putra Tama</span>
-                            <span class="user-role">Animasi</span>
+                        <div class="user-info doc-pemilik">
+                            <span class="user-name doc-pemilik-name">{{ doc.pemilik.user.get_full_name }}</span>
+                            <span class="user-role doc-pemilik-prodi">{{ doc.pemilik.program_studi.nama_prodi }}</span>
                         </div>
                     </td>
-                    <td>14 April 2025, 10:00</td>
+                    <td>{{ doc.uploaded_at|date:"d F Y, H:i" }}</td>
                     <td class="action-icons">
-                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                        <a class="doc-file-url" href="{% url 'tugas_akhir:document-file' pk=doc.pk %}" target="_blank" title="View File"><i class="fas fa-eye"></i></a>
+                        <a href="{% url 'tugas_akhir:document-file' pk=doc.pk %}?action=download" title="Download File"><i class="fas fa-download"></i></a>
+                        <a href="#" class="edit-btn"
+                           data-bs-toggle="modal"
+                           data-bs-target="#editDocumentModal"
+                           data-document-id="{{ doc.pk }}"
+                           title="Edit File"><i class="fas fa-edit"></i></a>
+                        <a href="#" class="delete-btn text-danger"
+                           data-bs-toggle="modal"
+                           data-bs-target="#deleteDocumentModal"
+                           data-document-name="{{ doc.nama_dokumen }}"
+                           data-delete-url="{% url 'tugas_akhir:document-delete' pk=doc.pk %}"
+                           title="Delete File"><i class="fas fa-trash-alt"></i></a>
                     </td>
                 </tr>
+                {% empty %}
                 <tr>
-                    <td>BAB I: Pendahuluan</td>
-                    <td>
-                        <span class="status-badge status-disetujui">Disetujui</span>
-                    </td>
-                    <td>
-                        <div class="user-info">
-                            <span class="user-name">Agil Angga Anggara</span>
-                            <span class="user-role">Teknik Informatika</span>
-                        </div>
-                    </td>
-                    <td>08 Maret 2025, 14:00</td>
-                    <td class="action-icons">
-                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    <td colspan="6" style="text-align: center; padding: 20px;">
+                        {% if search_query %}
+                        No documents found matching your search criteria.
+                        {% else %}
+                        No documents have been uploaded yet.
+                        {% endif %}
                     </td>
                 </tr>
-                <tr>
-                    <td>BAB III: Analisis dan Perancangan</td>
-                    <td>
-                        <span class="status-badge status-revisi">Revisi</span>
-                    </td>
-                    <td>
-                        <div class="user-info">
-                            <span class="user-name">Maishka Putri</span>
-                            <span class="user-role">TRPL</span>
-                        </div>
-                    </td>
-                    <td>29 April 2025, 12:00</td>
-                    <td class="action-icons">
-                        <a href="#" title="Download"><i class="fas fa-download"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                    </td>
-                </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
 
+        {% if documents.has_other_pages %}
         <nav class="pagination">
-            <a href="#" class="page-arrow">&laquo;</a>
-            <a href="#" class="page-number active">1</a>
-            <a href="#" class="page-number">2</a>
-            <a href="#" class="page-number">3</a>
-            <a href="#" class="page-number">4</a>
-            <a href="#" class="page-number">5</a>
-            <a href="#" class="page-number">6</a>
-            <a href="#" class="page-arrow">&raquo;</a>
+            {% if documents.has_previous %}
+            <a href="?page={{ documents.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&laquo;</a>
+            {% else %}
+            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&laquo;</span>
+            {% endif %}
+
+            {% for i in documents.paginator.page_range %}
+            {% if documents.number == i %}
+            <a href="#" class="page-number active">{{ i }}</a>
+            {% elif i > documents.number|add:'-3' and i < documents.number|add:'3' %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == documents.paginator.page_range.0 or i == documents.paginator.page_range.1 %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == documents.paginator.num_pages or i == documents.paginator.num_pages|add:'-1' %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == documents.number|add:'-3' or i == documents.number|add:'3' %}
+            <span class="page-number">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {% if documents.has_next %}
+            <a href="?page={{ documents.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&raquo;</a>
+            {% else %}
+            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&raquo;</span>
+            {% endif %}
         </nav>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="deleteDocumentModal" tabindex="-1" aria-labelledby="deleteDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDocumentModalLabel">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus dokumen <strong id="documentNameToDelete"></strong>?</p>
+                <p class="text-danger">Tindakan ini tidak dapat diurungkan.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteDocumentForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editDocumentModal" tabindex="-1" aria-labelledby="editDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDocumentModalLabel">Edit Dokumen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editDocumentForm" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-tugas-akhir" class="form-label">Tugas Akhir</label>
+                            <select id="edit-tugas-akhir" name="tugas_akhir" class="form-select" required>
+                                {% for ta in tugas_akhirs %}<option value="{{ ta.pk }}">{{ ta }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="error-tugas_akhir"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-pemilik" class="form-label">Pemilik</label>
+                            <select id="edit-pemilik" name="pemilik" class="form-select" required>
+                                {% for mhs in mahasiswas %}<option value="{{ mhs.pk }}">{{ mhs.user.get_full_name }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="error-pemilik"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-nama-dokumen" class="form-label">Nama Dokumen</label>
+                        <input type="text" id="edit-nama-dokumen" name="nama_dokumen" class="form-control" required>
+                        <div class="invalid-feedback" id="error-nama_dokumen"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-bab" class="form-label">BAB</label>
+                            <select id="edit-bab" name="bab" class="form-select" required>
+                                {% for code, name in bab_choices %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="error-bab"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-status" class="form-label">Status</label>
+                            <select id="edit-status" name="status" class="form-select" required>
+                                {% for code, name in status_choices %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="error-status"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-file" class="form-label">File</label>
+                        <div id="current-file-display" class="mb-1" style="font-size: 0.9em;">Current: <a href="#" target="_blank"></a></div>
+                        <input type="file" id="edit-file" name="file" class="form-control">
+                        <small class="form-text text-muted">Leave blank to keep the current file.</small>
+                        <div class="invalid-feedback" id="error-file"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="saveDocumentChangesBtn" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
+
+{% block extra_css %}
+<style>
+    .messages { padding: 0 20px 20px 20px; }
+    .alert { /* ... (existing styles) ... */ }
+    .action-icons a {
+        color: #6c757d;
+        margin: 0 5px;
+        font-size: 1.1em;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .action-icons a:hover { color: #0F47AD; }
+    .action-icons a[title~="Edit"]:hover { color: #ffc107; }
+</style>
+{% endblock %}
+
+
+{% block scripts %}
+{{ block.super }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // === DELETE MODAL LOGIC (UPGRADED FOR BOOTSTRAP) ===
+        const deleteDocumentModal = document.getElementById('deleteDocumentModal');
+        if (deleteDocumentModal) {
+            const deleteForm = document.getElementById('deleteDocumentForm');
+            const documentNameSpan = document.getElementById('documentNameToDelete');
+
+            // Listen for when the modal is about to be shown
+            deleteDocumentModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget; // The link that triggered the modal
+
+                // Get data from the data-* attributes
+                const documentName = button.getAttribute('data-document-name');
+                const deleteUrl = button.getAttribute('data-delete-url');
+
+                // Update the modal's content
+                documentNameSpan.textContent = `'${documentName}'`;
+                deleteForm.action = deleteUrl;
+            });
+        }
+
+        // === NEW BOOTSTRAP-DRIVEN EDIT LOGIC ===
+        const editDocumentModal = document.getElementById('editDocumentModal');
+        if (editDocumentModal) {
+            const editForm = document.getElementById('editDocumentForm');
+            const saveButton = document.getElementById('saveDocumentChangesBtn');
+
+            // 1. Listen for when the modal is about to be shown
+            editDocumentModal.addEventListener('show.bs.modal', async (event) => {
+                const button = event.relatedTarget; // The link that triggered the modal
+                const documentId = button.getAttribute('data-document-id');
+                const url = `/tugas-akhir/documents/${documentId}/edit/`;
+
+                editForm.action = url; // Set the form's action for later
+
+                // Clear previous error messages
+                editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+                // Fetch data to populate the form
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    // Populate form fields
+                    editForm.querySelector('#edit-tugas-akhir').value = data.tugas_akhir;
+                    editForm.querySelector('#edit-pemilik').value = data.pemilik;
+                    editForm.querySelector('#edit-nama-dokumen').value = data.nama_dokumen;
+                    editForm.querySelector('#edit-bab').value = data.bab;
+                    editForm.querySelector('#edit-status').value = data.status;
+
+                    const fileDisplay = editForm.querySelector('#current-file-display');
+                    if (data.current_file_url) {
+                        fileDisplay.querySelector('a').href = data.current_file_url;
+                        fileDisplay.querySelector('a').textContent = data.current_file_name;
+                        fileDisplay.style.display = 'block';
+                    } else {
+                        fileDisplay.style.display = 'none';
+                    }
+                    editForm.querySelector('#edit-file').value = ''; // Clear file input
+                } catch (error) {
+                    console.error('Error fetching document data:', error);
+                    alert('Could not load document data.');
+                }
+            });
+
+            // 2. Listen for a click on the "Save Changes" button
+            saveButton.addEventListener('click', async () => {
+                const formData = new FormData(editForm);
+                const url = editForm.action;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // If successful, reload the page to show changes.
+                        // A more advanced implementation could update the row with JS.
+                        window.location.reload();
+                    } else {
+                        // Display validation errors
+                        editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                        editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+                        for (const field in data.errors) {
+                            const input = editForm.querySelector(`[name="${field}"]`);
+                            const errorDiv = document.getElementById(`error-${field}`);
+                            if (input) input.classList.add('is-invalid');
+                            if (errorDiv) errorDiv.textContent = data.errors[field][0];
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}}

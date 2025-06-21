@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from users.serializers import JurusanSerializer
 from users.models import Mahasiswa, Dosen, ProgramStudi
-from .models import RequestDosen, TugasAkhir
+from .models import RequestDosen, TugasAkhir, Dokumen # Import Dokumen
 
 class ProgramStudiSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProgramStudi
         fields = ['id', 'nama_prodi']
 
-    # --- Nested Serializers untuk Read-Only Info ---
+# --- Nested Serializers untuk Read-Only Info ---
 class MahasiswaSimpleSerializer(serializers.ModelSerializer):
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     program_studi = ProgramStudiSerializer(read_only=True)
@@ -23,13 +23,10 @@ class DosenSimpleSerializer(serializers.ModelSerializer):
         fields = ['user_id', 'nik', 'nama_lengkap', 'jurusan']
 
 # --- Serializers for RequestDosen ---
-
 class RequestDosenCreateSerializer(serializers.ModelSerializer):
-    """Serializer for Student creating a request."""
     dosen_id = serializers.PrimaryKeyRelatedField(
         queryset=Dosen.objects.all(), source='dosen', write_only=True, label="Dosen Pembimbing"
     )
-    # Sesuaikan nama field dan requirement
     rencana_judul = serializers.CharField(max_length=255, required=True)
     rencana_deskripsi = serializers.CharField(required=True, style={'base_template': 'textarea.html'})
     alasan_memilih_dosen = serializers.CharField(required=True, style={'base_template': 'textarea.html'})
@@ -38,9 +35,7 @@ class RequestDosenCreateSerializer(serializers.ModelSerializer):
         model = RequestDosen
         fields = ['dosen_id', 'rencana_judul', 'rencana_deskripsi', 'alasan_memilih_dosen']
 
-
 class RequestDosenListSerializer(serializers.ModelSerializer):
-    """Serializer for listing requests (for both student and dosen)."""
     mahasiswa = MahasiswaSimpleSerializer(read_only=True)
     dosen = DosenSimpleSerializer(read_only=True)
 
@@ -54,9 +49,7 @@ class RequestDosenListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-
 class RequestDosenRespondSerializer(serializers.ModelSerializer):
-    """Serializer for Dosen responding to a request."""
     status = serializers.ChoiceField(choices=[('ACCEPTED', 'Accepted'), ('REJECTED', 'Rejected')])
     dosen_response = serializers.CharField(required=False, allow_blank=True, style={'base_template': 'textarea.html'})
 
@@ -68,3 +61,45 @@ class RequestDosenRespondSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.status != 'PENDING':
             raise serializers.ValidationError("Hanya request dengan status PENDING yang dapat direspon.")
         return attrs
+
+# --- Serializer for Dokumen ---
+class DokumenSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Dokumen model, using existing simple serializers
+    for related user information.
+    """
+    pemilik_info = MahasiswaSimpleSerializer(source='pemilik', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    bab_display = serializers.CharField(source='get_bab_display', read_only=True)
+    file_url = serializers.FileField(source='file', read_only=True)
+
+    # Use write_only for the file upload field.
+    file = serializers.FileField(write_only=True)
+
+    class Meta:
+        model = Dokumen
+        fields = [
+            'id',
+            'bab',
+            'bab_display',
+            'nama_dokumen',
+            'file', # write-only
+            'file_url', # read-only
+            'status',
+            'status_display',
+            'pemilik_info',
+            'uploaded_at'
+        ]
+        read_only_fields = ['status']
+
+    def create(self, validated_data):
+        mahasiswa = self.context['request'].user.mahasiswa_profile
+        try:
+            tugas_akhir = TugasAkhir.objects.get(mahasiswa=mahasiswa)
+        except TugasAkhir.DoesNotExist:
+            raise serializers.ValidationError("Anda tidak memiliki data Tugas Akhir yang aktif untuk mengunggah dokumen.")
+
+        validated_data['pemilik'] = mahasiswa
+        validated_data['tugas_akhir'] = tugas_akhir
+        validated_data['status'] = 'Pending'
+        return super().create(validated_data)
