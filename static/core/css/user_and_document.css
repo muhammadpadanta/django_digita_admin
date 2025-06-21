@@ -160,6 +160,22 @@
     font-weight: bold;
 }
 
+span.badge.badge-dosen{
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+}
+
+span.badge.badge-mahasiswa{
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+}
+
 /* === DOCUMENTS PAGE STYLES / status-badge === */
 
 .status-badge {
@@ -172,17 +188,135 @@
 }
 
 .status-badge.status-pending {
-    background-color: #fff3cd; /* Bootstrap 'warning' light background */
-    color: #856404; /* Bootstrap 'warning' dark text */
+    background-color: #fff3cd;
+    color: #856404;
 }
 
 .status-badge.status-disetujui {
-    background-color: #d4edda; /* Bootstrap 'success' light background */
-    color: #155724; /* Bootstrap 'success' dark text */
+    background-color: #d4edda;
+    color: #155724;
 }
 
 .status-badge.status-revisi {
-    background-color: #f8d7da; /* Bootstrap 'danger' light background */
-    color: #721c24; /* Bootstrap 'danger' dark text */
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge-active { background-color: #28a745; color: white; }
+.badge-inactive { background-color: #6c757d; color: white; }
+.action-icons .btn-link {
+    color: #495057;
+    text-decoration: none;
+}
+.action-icons .btn-link:hover {
+    color: #0056b3;
+}
+
+.hidden {
+    display: none;
+}
+.clickable-count {
+    cursor: pointer;
+    color: #0d6efd;
+    text-decoration: underline;
+}
+.clickable-count:hover {
+    color: #0a58ca;
+}
+
+/* Simple pagination styling */
+.pagination-nav .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+.pagination-nav .page-link {
+    cursor: pointer;
+}
+/* Enhanced Role Selection Styling */
+.role-selection-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.role-option .form-check-input {
+    display: none; /* Hide the default radio button */
+}
+
+.role-option .form-check-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 120px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+}
+
+.role-option .form-check-label:hover {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.role-option .form-check-input:checked + .form-check-label {
+    background-color: #e7f1ff;
+    border-color: #0d6efd;
+    color: #0a58ca;
+    font-weight: 600;
+}
+
+.role-option .role-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.form-select {
+    display: block;
+    width: 100%;
+    padding: .375rem 2.25rem .375rem .75rem;
+    -moz-padding-start: calc(0.75rem - 3px);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: 16px 12px;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+.form-select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 .25rem rgba(13,110,253,.25);
+}
+.form-select.is-invalid {
+    border-color: #dc3545;
+}
+.hidden {
+    display: none !important;
+}
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: .25rem;
+    font-size: .875em;
+    color: #dc3545;
+}
+.is-invalid ~ .invalid-feedback {
+    display: block;
 }
 

@@ -15,21 +15,21 @@
 
     <div class="main-panel">
         <nav class="tabs-nav">
-            <a href="#" class="active">Semua User</a>
-            <a href="#">Mahasiswa</a>
-            <a href="#">Dosen</a>
+            <a href="#" class="tab-link active" data-role="all">Semua User</a>
+            <a href="#" class="tab-link" data-role="mahasiswa">Mahasiswa</a>
+            <a href="#" class="tab-link" data-role="dosen">Dosen</a>
         </nav>
 
         <div class="action-bar">
-            <div class="search-wrapper">
+            <form class="search-wrapper" method="get" action="{% url 'users:user_management_list' %}">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Cari user...">
-            </div>
+                <input type="text" name="q" placeholder="Cari user berdasarkan nama..." value="{{ search_query|default_if_none:'' }}">
+            </form>
             <div class="buttons-wrapper">
                 <button class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                     <i class="fas fa-plus"></i> Tambah User
                 </button>
             </div>
@@ -42,100 +42,548 @@
                     <th>NAMA</th>
                     <th>NIM/NIK</th>
                     <th>EMAIL</th>
-                    <th>DOSPEN/MAHASISWA</th>
+                    <th>ROLE</th>
+                    <th>STATUS</th> <th>DOSPEM/MAHASISWA</th>
                     <th>AKSI</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
+                {% for user in user_list %}
+                <tr data-role="{{ user.role|lower }}">
                     <td>
                         <div class="user-info">
-                            <span class="user-name">Abyan Putra Tama</span>
-                            <span class="user-role">Animasi</span>
+                            <span class="user-name">{{ user.full_name }}</span>
+                            <span class="user-role">{{ user.details }}</span>
                         </div>
                     </td>
-                    <td>4467152497</td>
-                    <td>abyan121@gmail.com</td>
-                    <td>Dr. Budi Santoso</td>
-                    <td class="action-icons">
-                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                    </td>
-                </tr>
-                <tr>
+                    <td>{{ user.identifier }}</td>
+                    <td>{{ user.email }}</td>
                     <td>
-                        <div class="user-info">
-                            <span class="user-name">Erlangga Adhitama</span>
-                            <span class="user-role">Teknik Informatika</span>
-                        </div>
+                        <span class="badge {% if user.role == 'Dosen' %}badge-dosen{% else %}badge-mahasiswa{% endif %}">
+                            {{ user.role }}
+                        </span>
                     </td>
-                    <td>3312781254</td>
-                    <td>erlang71@gmail.com</td>
-                    <td>Dodi Wijaksono, S.Tr. Kom</td>
-                    <td class="action-icons">
-                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                    <td> {% if user.is_active %}
+                        <span class="badge badge-active">Active</span>
+                        {% else %}
+                        <span class="badge badge-inactive">Inactive</span>
+                        {% endif %}
                     </td>
-                </tr>
-                <tr>
                     <td>
-                        <div class="user-info">
-                            <span class="user-name">Miftahul Agus, M.Eng</span>
-                            <span class="user-role">Animasi</span>
-                        </div>
+                        {% if user.role == 'Dosen' %}
+                        {% if user.mahasiswa_binaan_count > 0 %}
+                        <a class="clickable-count" data-bs-toggle="modal" data-bs-target="#studentsModal" data-dosen-id="{{ user.dosen_user_id }}">
+                            {{ user.mahasiswa_binaan_count }} Mahasiswa
+                        </a>
+                        {% else %}
+                        <span>-</span>
+                        {% endif %}
+                        {% elif user.role == 'Mahasiswa' %}
+                        {% if user.dosen_pembimbing %}
+                        <span>{{ user.dosen_pembimbing.full_name }} ({{ user.dosen_pembimbing.nik }})</span>
+                        {% else %}
+                        <span>Belum diatur</span>
+                        {% endif %}
+                        {% endif %}
                     </td>
-                    <td>213789</td>
-                    <td>miftah@polibatam.ac.id</td>
-                    <td>6 Mahasiswa</td>
                     <td class="action-icons">
-                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                        <a href="#" title="Edit" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user-id="{{ user.id }}"><i class="fas fa-edit"></i></a>
+                        <a href="#" title="Delete" class="text-danger" data-bs-toggle="modal"
+                           data-bs-target="#deleteUserModal"
+                           data-user-id="{{ user.id }}"
+                           data-user-name="{{ user.full_name }}"> <i class="fas fa-trash-alt"></i>
+                        </a>
                     </td>
                 </tr>
+                {% empty %}
                 <tr>
-                    <td>
-                        <div class="user-info">
-                            <span class="user-name">Indah Dwi Intan</span>
-                            <span class="user-role">TRPL</span>
-                        </div>
-                    </td>
-                    <td>4423501045</td>
-                    <td>indah82@gmail.com</td>
-                    <td>Dodi Wijaksono, S.Tr. Kom</td>
-                    <td class="action-icons">
-                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                    </td>
+                    <td colspan="6" style="text-align: center;">No users found.</td>
                 </tr>
-                <tr>
-                    <td>
-                        <div class="user-info">
-                            <span class="user-name">Dr. Budi Santoso</span>
-                            <span class="user-role">Teknik Informatika</span>
-                        </div>
-                    </td>
-                    <td>112732</td>
-                    <td>budi@polibatam.ac.id</td>
-                    <td>10 Mahasiswa</td>
-                    <td class="action-icons">
-                        <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                    </td>
-                </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
 
+        {% if is_paginated %}
         <nav class="pagination">
-            <a href="#" class="page-arrow">&laquo;</a>
-            <a href="#" class="page-number active">1</a>
-            <a href="#" class="page-number">2</a>
-            <a href="#" class="page-number">3</a>
-            <a href="#" class="page-number">4</a>
-            <a href="#" class="page-number">5</a>
-            <a href="#" class="page-number">6</a>
-            <a href="#" class="page-arrow">&raquo;</a>
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&laquo;</a>
+            {% else %}
+            <span class="page-arrow disabled">&laquo;</span>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+            {% if page_obj.number == i %}
+            <a href="#" class="page-number active">{{ i }}</a>
+            {% else %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&raquo;</a>
+            {% else %}
+            <span class="page-arrow disabled">&raquo;</span>
+            {% endif %}
         </nav>
+        {% endif %}
     </div>
 </div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="edit_nama_lengkap" class="form-label">Nama Lengkap</label>
+                        <input type="text" class="form-control" name="nama_lengkap" id="edit_nama_lengkap" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_email" class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" id="edit_email" required>
+                    </div>
+
+                    <div id="editMahasiswaFields" class="hidden">
+                        <div class="mb-3">
+                            <label for="edit_nim" class="form-label">NIM</label>
+                            <input type="text" class="form-control" name="nim" id="edit_nim">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_program_studi" class="form-label">Program Studi</label>
+                            <select class="form-select" name="program_studi" id="edit_program_studi">
+                                {% for prodi in program_studi_list %}
+                                <option value="{{ prodi.id }}">{{ prodi.nama_prodi }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_dosen_pembimbing" class="form-label">Dosen Pembimbing</label>
+                            <select class="form-select" name="dosen_pembimbing" id="edit_dosen_pembimbing">
+                                <option value="">---------</option>
+                                {% for dosen in dosen_list %}
+                                <option value="{{ dosen.user_id }}">{{ dosen.user__first_name }} {{ dosen.user__last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="editDosenFields" class="hidden">
+                        <div class="mb-3">
+                            <label for="edit_nik" class="form-label">NIK</label>
+                            <input type="text" class="form-control" name="nik" id="edit_nik">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_jurusan" class="form-label">Jurusan</label>
+                            <select class="form-select" name="jurusan" id="edit_jurusan">
+                                {% for jur in jurusan_list %}
+                                <option value="{{ jur.id }}">{{ jur.nama_jurusan }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_is_active">
+                        <label class="form-check-label" for="edit_is_active">
+                            User is Active
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="editUserForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Students Modal -->
+<div class="modal fade" id="studentsModal" tabindex="-1" aria-labelledby="studentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentsModalLabel">Mahasiswa Binaan: <span id="dosenName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>NAMA LENGKAP</th>
+                        <th>NIM</th>
+                    </tr>
+                    </thead>
+                    <tbody id="studentsListBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <div id="pagination-info"></div>
+                <nav>
+                    <ul class="pagination pagination-sm m-0 pagination-nav" id="modalPagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel">Tambah User Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="roleSelectionStep">
+                    <p class="text-center mb-1">Pilih role untuk user baru:</p>
+                    <div class="role-selection-container">
+                        <div class="role-option">
+                            <input class="form-check-input" type="radio" name="roleSelection" id="roleMahasiswa" value="mahasiswa">
+                            <label class="form-check-label" for="roleMahasiswa">
+                                <i class="fas fa-user-graduate role-icon"></i>
+                                <span>Mahasiswa</span>
+                            </label>
+                        </div>
+                        <div class="role-option">
+                            <input class="form-check-input" type="radio" name="roleSelection" id="roleDosen" value="dosen">
+                            <label class="form-check-label" for="roleDosen">
+                                <i class="fas fa-chalkboard-teacher role-icon"></i>
+                                <span>Dosen</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="userFormStep" class="hidden">
+                    <form id="createUserForm" method="post" action="{% url 'users:user_create' %}">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="role" id="userRoleInput">
+
+                        <div class="mb-3">
+                            <label for="id_nama_lengkap" class="form-label">Nama Lengkap</label>
+                            <input type="text" class="form-control" name="nama_lengkap" id="id_nama_lengkap" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" id="id_email" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div id="mahasiswaFields" class="hidden">
+                            <div class="mb-3">
+                                <label for="id_nim" class="form-label">NIM</label>
+                                <input type="text" class="form-control" name="nim" id="id_nim">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_program_studi_id" class="form-label">Program Studi</label>
+                                {{ creation_form.program_studi_id }}
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div id="dosenFields" class="hidden">
+                            <div class="mb-3">
+                                <label for="id_nik" class="form-label">NIK</label>
+                                <input type="text" class="form-control" name="nik" id="id_nik">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_jurusan_id" class="form-label">Jurusan</label>
+                                {{ creation_form.jurusan_id }}
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" id="id_password" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label">Konfirmasi Password</label>
+                            <input type="password" class="form-control" name="password2" id="id_password2" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="backToRoleSelectionBtn" style="display: none;">Kembali</button>
+                <button type="button" class="btn btn-primary" id="nextToFormBtn">Lanjutkan</button>
+                <button type="submit" form="createUserForm" class="btn btn-primary" id="submitUserFormBtn" style="display: none;">Tambah User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user <strong id="userNameToDelete"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteUserForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const dosenData = JSON.parse('{{ dosen_student_json|escapejs }}');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Tab Filtering Logic ---
+        const tabContainer = document.querySelector('.tabs-nav');
+        const userRows = document.querySelectorAll('table.data-table tbody tr');
+        tabContainer.addEventListener('click', (event) => {
+            if (!event.target.matches('.tab-link')) return;
+            event.preventDefault();
+
+            const selectedRole = event.target.getAttribute('data-role');
+            document.querySelectorAll('.tabs-nav .tab-link').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            userRows.forEach(row => {
+                if (row.querySelector('td[colspan="6"]')) return;
+                const itemRole = row.getAttribute('data-role');
+                row.style.display = (selectedRole === 'all' || selectedRole === itemRole) ? '' : 'none';
+            });
+        });
+
+        // --- Students Modal & Pagination Logic ---
+        const studentsModal = document.getElementById('studentsModal');
+        if (studentsModal) {
+            const studentsListBody = document.getElementById('studentsListBody');
+            const modalPagination = document.getElementById('modalPagination');
+            const dosenNameSpan = document.getElementById('dosenName');
+            const paginationInfoSpan = document.getElementById('pagination-info');
+            const ITEMS_PER_PAGE = 5;
+            let currentPage = 1;
+            let currentStudents = [];
+
+            const displayPage = (page) => {
+                currentPage = page;
+                studentsListBody.innerHTML = '';
+                const start = (page - 1) * ITEMS_PER_PAGE;
+                const end = start + ITEMS_PER_PAGE;
+                const paginatedItems = currentStudents.slice(start, end);
+                paginatedItems.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${student.full_name}</td><td>${student.nim}</td>`;
+                    studentsListBody.appendChild(row);
+                });
+                renderPaginationControls();
+                updatePaginationInfo();
+            };
+
+            const updatePaginationInfo = () => {
+                const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+                const endItem = Math.min(currentPage * ITEMS_PER_PAGE, currentStudents.length);
+                paginationInfoSpan.textContent = `Showing ${startItem}-${endItem} of ${currentStudents.length}`;
+            };
+
+            const renderPaginationControls = () => {
+                modalPagination.innerHTML = '';
+                const totalPages = Math.ceil(currentStudents.length / ITEMS_PER_PAGE);
+                if (totalPages <= 1) return;
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
+                modalPagination.appendChild(prevLi);
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
+                modalPagination.appendChild(nextLi);
+            };
+
+            studentsModal.addEventListener('show.bs.modal', (event) => {
+                const triggerElement = event.relatedTarget;
+                const dosenId = triggerElement.getAttribute('data-dosen-id');
+                const data = dosenData[dosenId];
+                if (data) {
+                    dosenNameSpan.textContent = data.dosen_name;
+                    currentStudents = data.students;
+                    displayPage(1);
+                }
+            });
+
+            modalPagination.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (e.target.tagName === 'A' && !e.target.parentElement.classList.contains('disabled')) {
+                    const page = parseInt(e.target.getAttribute('data-page'));
+                    displayPage(page);
+                }
+            });
+        }
+
+        // --- Create User Modal Logic ---
+        const createUserModal = document.getElementById('createUserModal');
+        if (createUserModal) {
+            const roleSelectionStep = document.getElementById('roleSelectionStep');
+            const userFormStep = document.getElementById('userFormStep');
+            const form = document.getElementById('createUserForm');
+            const modalTitle = document.getElementById('createUserModalLabel');
+            const mahasiswaFields = document.getElementById('mahasiswaFields');
+            const dosenFields = document.getElementById('dosenFields');
+            const userRoleInput = document.getElementById('userRoleInput');
+            const nextBtn = document.getElementById('nextToFormBtn');
+            const backBtn = document.getElementById('backToRoleSelectionBtn');
+            const submitBtn = document.getElementById('submitUserFormBtn');
+
+            const resetModal = () => {
+                modalTitle.textContent = 'Tambah User Baru';
+                roleSelectionStep.classList.remove('hidden');
+                userFormStep.classList.add('hidden');
+                mahasiswaFields.classList.add('hidden');
+                dosenFields.classList.add('hidden');
+                form.reset();
+                form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+                Array.from(document.querySelectorAll('input[name="roleSelection"]')).forEach(radio => radio.checked = false);
+                nextBtn.style.display = 'inline-block';
+                backBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+            };
+
+            nextBtn.addEventListener('click', () => {
+                const selectedRole = document.querySelector('input[name="roleSelection"]:checked');
+                if (!selectedRole) {
+                    alert('Silakan pilih role terlebih dahulu.');
+                    return;
+                }
+                const roleValue = selectedRole.value;
+                userRoleInput.value = roleValue;
+                roleSelectionStep.classList.add('hidden');
+                userFormStep.classList.remove('hidden');
+
+                if (roleValue === 'mahasiswa') {
+                    modalTitle.textContent = 'Tambah Mahasiswa Baru';
+                    mahasiswaFields.classList.remove('hidden');
+                    dosenFields.classList.add('hidden');
+                } else {
+                    modalTitle.textContent = 'Tambah Dosen Baru';
+                    dosenFields.classList.remove('hidden');
+                    mahasiswaFields.classList.add('hidden');
+                }
+                nextBtn.style.display = 'none';
+                backBtn.style.display = 'inline-block';
+                submitBtn.style.display = 'inline-block';
+            });
+
+            backBtn.addEventListener('click', resetModal);
+            createUserModal.addEventListener('hidden.bs.modal', resetModal);
+
+            // AJAX form submission for creating a user
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const formData = new FormData(form);
+
+                form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const data = await response.json();
+                        if (data.errors) {
+                            for (const [field, errors] of Object.entries(data.errors)) {
+                                const input = form.querySelector(`[name="${field}"], [name="${field}_id"]`);
+                                if (input) {
+                                    const errorDiv = input.closest('.mb-3').querySelector('.invalid-feedback');
+                                    input.classList.add('is-invalid');
+                                    if (errorDiv) {
+                                        errorDiv.textContent = errors.join(' ');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('An error occurred:', error);
+                }
+            });
+        }
+
+        // --- Edit User Modal Logic ---
+        const editUserModal = document.getElementById('editUserModal');
+        if (editUserModal) {
+            editUserModal.addEventListener('show.bs.modal', async (event) => {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const form = document.getElementById('editUserForm');
+                form.action = `/users/${userId}/edit/`;
+
+                const response = await fetch(`/users/${userId}/edit/`);
+                const data = await response.json();
+
+                form.querySelector('#edit_nama_lengkap').value = data.nama_lengkap;
+                form.querySelector('#edit_email').value = data.email;
+                form.querySelector('#edit_is_active').checked = data.is_active;
+
+                const mahasiswaFields = form.querySelector('#editMahasiswaFields');
+                const dosenFields = form.querySelector('#editDosenFields');
+
+                mahasiswaFields.classList.add('hidden');
+                dosenFields.classList.add('hidden');
+
+                if (data.role === 'mahasiswa') {
+                    mahasiswaFields.classList.remove('hidden');
+                    form.querySelector('#edit_nim').value = data.nim;
+                    form.querySelector('#edit_program_studi').value = data.program_studi_id;
+                    form.querySelector('#edit_dosen_pembimbing').value = data.dosen_pembimbing_id || '';
+                } else if (data.role === 'dosen') {
+                    dosenFields.classList.remove('hidden');
+                    form.querySelector('#edit_nik').value = data.nik;
+                    form.querySelector('#edit_jurusan').value = data.jurusan_id;
+                }
+            });
+        }
+
+        // --- Delete User Modal Logic ---
+        const deleteUserModal = document.getElementById('deleteUserModal');
+        if (deleteUserModal) {
+            deleteUserModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const userName = button.getAttribute('data-user-name');
+                const modalBodyName = deleteUserModal.querySelector('#userNameToDelete');
+                const deleteForm = deleteUserModal.querySelector('#deleteUserForm');
+                modalBodyName.textContent = userName;
+                deleteForm.action = `/users/${userId}/delete/`;
+            });
+        }
+    });
+</script>
 {% endblock %}

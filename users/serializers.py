@@ -1,3 +1,5 @@
+# users/serializers.py
+
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
@@ -9,7 +11,7 @@ from .models import Jurusan, ProgramStudi, Mahasiswa, Dosen
 
 
 # --- Serializer untuk List Dosen ---
-class DosenListSerializer(serializers.ModelSerializer):
+class DosenSerializer(serializers.ModelSerializer):
 
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
@@ -197,3 +199,27 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+class MahasiswaDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer to represent detailed Mahasiswa data for the API.
+    """
+    # Get fields from the related User model
+    nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    # Represent related models with their string representation
+    program_studi = serializers.StringRelatedField(read_only=True)
+    dosen_pembimbing = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Mahasiswa
+        fields = [
+            'user_id',
+            'nim',
+            'nama_lengkap',
+            'email',
+            'program_studi',
+            'dosen_pembimbing'
+        ]
+        read_only_fields = fields

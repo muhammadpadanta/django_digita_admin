@@ -1,16 +1,20 @@
-from django.contrib import admin
+# your_project/urls.py
 from django.urls import path, include
+from django.contrib import admin
 
-# This list defines the URL patterns for the entire project.
+# Define API v1 URLs in a separate list for clarity
+api_v1_patterns = [
+    path('users/', include('users.api_urls')),
+    path('tugas-akhir/', include('tugas_akhir.urls')),
+]
+
 urlpatterns = [
-    # Maps the '/admin/' URL to the Django admin interface.
     path('admin/', admin.site.urls),
 
-    # Includes all URL patterns from the 'users' application under the 'api/users/' prefix.
-    path('api/users/', include('users.urls')),
-
-    # Includes all URL patterns from the 'tugas_akhir' application under the 'api/ta/' prefix.
-    path('api/ta/', include('tugas_akhir.urls')),
-
+    # --- WEB PAGE URLS ---
     path('', include('core.urls')),
+    path('users/', include('users.urls', namespace='users')),
+
+    # --- API URLS ---
+    path('api/v1/', include(api_v1_patterns)),
 ]
