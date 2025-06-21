@@ -96,7 +96,7 @@ class PasswordResetConfirmView(View):
     """
     form_template_name = 'password_reset/password_reset_confirm_form.html'
     invalid_token_template_name = 'password_reset/password_reset_invalid_token.html'
-    success_url_name = 'users:password_reset_done'
+    success_url_name = 'users:password_reset_complete_page'
     serializer_class = PasswordResetConfirmSerializer
 
     def get(self, request, uidb64=None, token=None, *args, **kwargs):
@@ -140,7 +140,7 @@ class UserManagementView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'core/user_management.html'
     context_object_name = 'users_page'
-    paginate_by = 10
+    paginate_by = 5
 
     def get_queryset(self):
         queryset = User.objects.filter(
