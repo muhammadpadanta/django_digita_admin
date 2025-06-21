@@ -16,6 +16,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.generic import ListView, View
 
+from tugas_akhir.models import TugasAkhir
 from .forms import UserCreationAdminForm, UserEditForm
 from .models import Mahasiswa, Dosen, ProgramStudi, Jurusan
 from .serializers import PasswordResetConfirmSerializer, PasswordResetRequestSerializer
@@ -275,9 +276,25 @@ class UserEditView(LoginRequiredMixin, View):
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         form = UserEditForm(request.POST, instance=user)
+
         if form.is_valid():
-            form.save()
-            messages.success(request, f"User '{user.get_full_name()}' has been updated successfully.")
+            saved_user = form.save()
+            messages.success(request, f"User '{saved_user.get_full_name()}' has been updated successfully.")
+
+            if hasattr(saved_user, 'mahasiswa_profile'):
+                profile = saved_user.mahasiswa_profile
+                try:
+                    tugas_akhir = TugasAkhir.objects.get(mahasiswa=profile)
+                    new_dosen = profile.dosen_pembimbing
+
+                    if tugas_akhir.dosen_pembimbing != new_dosen:
+                        tugas_akhir.dosen_pembimbing = new_dosen
+                        tugas_akhir.save(update_fields=['dosen_pembimbing'])
+                        messages.info(request, "Advisor for the associated 'Tugas Akhir' has also been updated.")
+
+                except TugasAkhir.DoesNotExist:
+                    pass
+
             return redirect('users:user_management_list')
 
         error_message = "Update failed. " + " ".join([f"{field}: {error[0]}" for field, error in form.errors.items()])

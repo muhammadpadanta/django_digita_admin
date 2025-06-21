@@ -8,13 +8,13 @@ class MahasiswaSimpleSerializer(serializers.ModelSerializer):
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     class Meta:
         model = Mahasiswa
-        fields = ['user_id', 'nim', 'nama_lengkap'] # user_id adalah PK
+        fields = ['user_id', 'nim', 'nama_lengkap']
 
 class DosenSimpleSerializer(serializers.ModelSerializer):
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     class Meta:
         model = Dosen
-        fields = ['user_id', 'nik', 'nama_lengkap', 'jurusan'] # user_id adalah PK
+        fields = ['user_id', 'nik', 'nama_lengkap', 'jurusan']
 
 # --- Serializers for RequestDosen ---
 
@@ -40,7 +40,6 @@ class RequestDosenListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RequestDosen
-        # Tambahkan field baru ke list
         fields = [
             'id', 'mahasiswa', 'dosen', 'status',
             'rencana_judul', 'rencana_deskripsi',
