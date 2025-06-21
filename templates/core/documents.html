@@ -24,6 +24,9 @@
                 <button class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
                 </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDocumentModal">
+                    <i class="fas fa-plus"></i> Tambah Dokumen
+                </button>
             </div>
         </div>
 
@@ -208,22 +211,65 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="createDocumentModal" tabindex="-1" aria-labelledby="createDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createDocumentModalLabel">Tambah Dokumen Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createDocumentForm" method="POST" action="{% url 'tugas_akhir:document-create' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="create-tugas-akhir" class="form-label">Tugas Akhir</label>
+                            <select id="create-tugas-akhir" name="tugas_akhir" class="form-select" required>
+                                {% for ta in tugas_akhirs %}<option value="{{ ta.pk }}">{{ ta }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="create-error-tugas_akhir"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="create-pemilik" class="form-label">Pemilik</label>
+                            <select id="create-pemilik" name="pemilik" class="form-select" required>
+                                {% for mhs in mahasiswas %}<option value="{{ mhs.pk }}">{{ mhs.user.get_full_name }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="create-error-pemilik"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="create-nama-dokumen" class="form-label">Nama Dokumen</label>
+                        <input type="text" id="create-nama-dokumen" name="nama_dokumen" class="form-control" required>
+                        <div class="invalid-feedback" id="create-error-nama_dokumen"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="create-bab" class="form-label">BAB</label>
+                            <select id="create-bab" name="bab" class="form-select" required>
+                                {% for code, name in bab_choices %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+                            </select>
+                            <div class="invalid-feedback" id="create-error-bab"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="create-file" class="form-label">File</label>
+                            <input type="file" id="create-file" name="file" class="form-control" required>
+                            <div class="invalid-feedback" id="create-error-file"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="saveNewDocumentBtn" class="btn btn-primary">Simpan Dokumen</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
+
 {% block extra_css %}
-<style>
-    .messages { padding: 0 20px 20px 20px; }
-    .alert { /* ... (existing styles) ... */ }
-    .action-icons a {
-        color: #6c757d;
-        margin: 0 5px;
-        font-size: 1.1em;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .action-icons a:hover { color: #0F47AD; }
-    .action-icons a[title~="Edit"]:hover { color: #ffc107; }
-</style>
 {% endblock %}
 
 
@@ -232,56 +278,40 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // === DELETE MODAL LOGIC (UPGRADED FOR BOOTSTRAP) ===
+        // === DELETE MODAL LOGIC ===
         const deleteDocumentModal = document.getElementById('deleteDocumentModal');
         if (deleteDocumentModal) {
             const deleteForm = document.getElementById('deleteDocumentForm');
             const documentNameSpan = document.getElementById('documentNameToDelete');
-
-            // Listen for when the modal is about to be shown
             deleteDocumentModal.addEventListener('show.bs.modal', function (event) {
-                const button = event.relatedTarget; // The link that triggered the modal
-
-                // Get data from the data-* attributes
+                const button = event.relatedTarget;
                 const documentName = button.getAttribute('data-document-name');
                 const deleteUrl = button.getAttribute('data-delete-url');
-
-                // Update the modal's content
                 documentNameSpan.textContent = `'${documentName}'`;
                 deleteForm.action = deleteUrl;
             });
         }
 
-        // === NEW BOOTSTRAP-DRIVEN EDIT LOGIC ===
+        // === EDIT MODAL LOGIC ===
         const editDocumentModal = document.getElementById('editDocumentModal');
         if (editDocumentModal) {
             const editForm = document.getElementById('editDocumentForm');
             const saveButton = document.getElementById('saveDocumentChangesBtn');
-
-            // 1. Listen for when the modal is about to be shown
             editDocumentModal.addEventListener('show.bs.modal', async (event) => {
-                const button = event.relatedTarget; // The link that triggered the modal
+                const button = event.relatedTarget;
                 const documentId = button.getAttribute('data-document-id');
                 const url = `/tugas-akhir/documents/${documentId}/edit/`;
-
-                editForm.action = url; // Set the form's action for later
-
-                // Clear previous error messages
+                editForm.action = url;
                 editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                 editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
-
-                // Fetch data to populate the form
                 try {
                     const response = await fetch(url);
                     const data = await response.json();
-
-                    // Populate form fields
                     editForm.querySelector('#edit-tugas-akhir').value = data.tugas_akhir;
                     editForm.querySelector('#edit-pemilik').value = data.pemilik;
                     editForm.querySelector('#edit-nama-dokumen').value = data.nama_dokumen;
                     editForm.querySelector('#edit-bab').value = data.bab;
                     editForm.querySelector('#edit-status').value = data.status;
-
                     const fileDisplay = editForm.querySelector('#current-file-display');
                     if (data.current_file_url) {
                         fileDisplay.querySelector('a').href = data.current_file_url;
@@ -290,36 +320,26 @@
                     } else {
                         fileDisplay.style.display = 'none';
                     }
-                    editForm.querySelector('#edit-file').value = ''; // Clear file input
+                    editForm.querySelector('#edit-file').value = '';
                 } catch (error) {
                     console.error('Error fetching document data:', error);
-                    alert('Could not load document data.');
                 }
             });
-
-            // 2. Listen for a click on the "Save Changes" button
             saveButton.addEventListener('click', async () => {
                 const formData = new FormData(editForm);
                 const url = editForm.action;
-
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
                         body: formData,
                         headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
                     });
-
                     const data = await response.json();
-
                     if (data.success) {
-                        // If successful, reload the page to show changes.
-                        // A more advanced implementation could update the row with JS.
                         window.location.reload();
                     } else {
-                        // Display validation errors
                         editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                         editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
-
                         for (const field in data.errors) {
                             const input = editForm.querySelector(`[name="${field}"]`);
                             const errorDiv = document.getElementById(`error-${field}`);
@@ -332,6 +352,44 @@
                 }
             });
         }
+
+        // === CREATE MODAL LOGIC ===
+        const createDocumentModal = document.getElementById('createDocumentModal');
+        if(createDocumentModal) {
+            const createForm = document.getElementById('createDocumentForm');
+            const saveButton = document.getElementById('saveNewDocumentBtn');
+            createDocumentModal.addEventListener('hidden.bs.modal', function () {
+                createForm.reset();
+                createForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                createForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+            });
+            saveButton.addEventListener('click', async () => {
+                const formData = new FormData(createForm);
+                const url = createForm.action;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        createForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                        createForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+                        for (const field in data.errors) {
+                            const input = createForm.querySelector(`[name="${field}"]`);
+                            const errorDiv = document.getElementById(`create-error-${field}`);
+                            if (input) input.classList.add('is-invalid');
+                            if (errorDiv) errorDiv.textContent = data.errors[field][0];
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                }
+            });
+        }
     });
 </script>
-{% endblock %}}
+{% endblock %}

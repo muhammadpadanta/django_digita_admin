@@ -9,7 +9,8 @@ from django.core.paginator import Paginator
 
 from users.models import Mahasiswa
 from .models import Dokumen, TugasAkhir
-from .forms import DokumenEditForm
+from .forms import DokumenEditForm, DokumenCreateForm
+
 
 def document_list_view(request):
     """
@@ -63,6 +64,22 @@ def serve_document_file_view(request, pk):
         # Default to opening in a new tab (inline view)
         # FileResponse is optimized for this and sets the correct Content-Type
         return FileResponse(document.file.open('rb'))
+
+# --- VIEW for creating documents ---
+@require_POST
+@login_required
+def create_document_view(request):
+    """
+    Handles the AJAX form submission for creating a new document.
+    """
+    form = DokumenCreateForm(request.POST, request.FILES)
+    if form.is_valid():
+        form.save()
+        messages.success(request, 'Dokumen baru telah berhasil ditambahkan.')
+        return JsonResponse({'success': True})
+    else:
+        # Return form errors as JSON so they can be displayed in the modal
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
 # --- VIEW for deleting documents ---

@@ -13,4 +13,5 @@ urlpatterns = [
     path('documents/<int:pk>/delete/', views.delete_document_view, name='document-delete'),
     # URL for editing a document
     path('documents/<int:pk>/edit/', views.edit_document_view, name='document-edit'),
+    path('documents/create/', views.create_document_view, name='document-create'),
 ]

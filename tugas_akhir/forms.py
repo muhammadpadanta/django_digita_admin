@@ -36,3 +36,32 @@ class DokumenEditForm(forms.ModelForm):
                 self.add_error('bab', 'Mahasiswa ini sudah pernah mengunggah dokumen untuk BAB ini.')
 
         return cleaned_data
+
+# --- Form for creating documents ---
+class DokumenCreateForm(forms.ModelForm):
+    class Meta:
+        model = Dokumen
+        # We don't include 'status' because it should default to 'Pending'
+        fields = ['tugas_akhir', 'bab', 'nama_dokumen', 'file', 'pemilik']
+        widgets = {
+            'tugas_akhir': forms.Select(attrs={'class': 'form-select'}),
+            'bab': forms.Select(attrs={'class': 'form-select'}),
+            'nama_dokumen': forms.TextInput(attrs={'class': 'form-control'}),
+            'file': forms.FileInput(attrs={'class': 'form-control'}),
+            'pemilik': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def clean(self):
+        """
+        Custom validation to check for duplicate BAB uploads for a new document.
+        """
+        cleaned_data = super().clean()
+        bab = cleaned_data.get("bab")
+        pemilik = cleaned_data.get("pemilik")
+
+        if bab and pemilik:
+            # For creation, we just check if any record with this combination exists
+            if Dokumen.objects.filter(pemilik=pemilik, bab=bab).exists():
+                self.add_error('bab', 'Mahasiswa ini sudah pernah mengunggah dokumen untuk BAB ini.')
+
+        return cleaned_data
