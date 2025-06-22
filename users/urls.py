@@ -9,6 +9,7 @@ app_name = 'users'
 # These are the URLs for admin web interface
 urlpatterns = [
     path('', views.UserManagementView.as_view(), name='user_management_list'),
+    path('export/', views.UserExportView.as_view(), name='user_export'),
     path('<int:pk>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
     path('<int:pk>/edit/', views.UserEditView.as_view(), name='user_edit'),
     path('create/', views.UserCreateView.as_view(), name='user_create'),

@@ -1,6 +1,8 @@
 # users/views.py
 
 import json
+import csv
+from django.http import HttpResponse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -22,6 +24,11 @@ from .models import Mahasiswa, Dosen, ProgramStudi, Jurusan
 from .serializers import PasswordResetConfirmSerializer, PasswordResetRequestSerializer
 from django.db.models import Value
 from django.db.models.functions import Concat
+
+# openpyxl import
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
 
 # --- Template-Based Views (Password Reset & User Management) ---
 
@@ -156,11 +163,17 @@ class UserManagementView(LoginRequiredMixin, ListView):
         )
 
         search_query = self.request.GET.get('q', None)
+        role_filter = self.request.GET.get('role', None)
 
         if search_query:
             queryset = queryset.annotate(
                 full_name_search=Concat('first_name', Value(' '), 'last_name')
             ).filter(full_name_search__icontains=search_query)
+
+        if role_filter == 'mahasiswa':
+            queryset = queryset.filter(mahasiswa_profile__isnull=False)
+        elif role_filter == 'dosen':
+            queryset = queryset.filter(dosen_profile__isnull=False)
 
         return queryset.order_by('first_name', 'last_name')
 
@@ -171,6 +184,7 @@ class UserManagementView(LoginRequiredMixin, ListView):
         if 'edit_form' not in kwargs:
             context['edit_form'] = UserEditForm(instance=User())
         context['search_query'] = self.request.GET.get('q', '')
+        context['role_filter'] = self.request.GET.get('role', 'all')
 
         paginated_users = context['users_page']
         user_list = [
@@ -225,6 +239,79 @@ class UserManagementView(LoginRequiredMixin, ListView):
             u['dosen_user_id']: {'dosen_name': u['full_name'], 'students': u['mahasiswa_binaan_list']}
             for u in user_list if u.get('role') == 'Dosen'
         }
+
+class UserExportView(LoginRequiredMixin, View):
+    """
+    Handles exporting the filtered user list to a polished Excel (.xlsx) file.
+    """
+    def get(self, request, *args, **kwargs):
+        user_list_view = UserManagementView()
+        user_list_view.request = self.request
+
+        queryset = user_list_view.get_queryset().select_related(
+            'mahasiswa_profile__program_studi', 'dosen_profile__jurusan'
+        )
+
+        # --- Create an in-memory Excel workbook ---
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "User Data Export"
+
+        headers = ['Full Name', 'Email', 'Role', 'NIM / NIK', 'Status', 'Details (Prodi/Jurusan)', 'Advisor / Supervised Students']
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='4F81BD', end_color='4F81BD', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center')
+
+        ws.append(headers)
+
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        for user in queryset:
+            role_data = UserManagementView._get_user_role_data(user)
+            advisor_info = ''
+            if role_data.get('role') == 'Mahasiswa':
+                dospem = role_data.get('dosen_pembimbing')
+                advisor_info = f"{dospem['full_name']} ({dospem['nik']})" if dospem else 'Not Set'
+            elif role_data.get('role') == 'Dosen':
+                count = role_data.get('mahasiswa_binaan_count', 0)
+                advisor_info = f"{count} Mahasiswa"
+
+            row_data = [
+                user.get_full_name() or user.username,
+                user.email,
+                role_data.get('role', 'N/A'),
+                role_data.get('identifier', 'N/A'),
+                'Active' if user.is_active else 'Inactive',
+                role_data.get('details', 'N/A'),
+                advisor_info
+            ]
+            ws.append(row_data)
+
+
+        for i, column_cells in enumerate(ws.columns, 1):
+            max_length = 0
+            column_letter = get_column_letter(i)
+            for cell in column_cells:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        ws.freeze_panes = 'A2'
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="users_export.xlsx"'
+
+        wb.save(response)
+
+        return response
 
 class UserCreateView(LoginRequiredMixin, View):
     """

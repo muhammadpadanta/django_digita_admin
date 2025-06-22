@@ -21,9 +21,9 @@
                 <input type="text" name="q" placeholder="Cari nama dokumen atau pemilik..." value="{{ search_query|default_if_none:'' }}">
             </form>
             <div class="buttons-wrapper">
-                <button class="btn btn-secondary">
+                <a id="exportLink" href="#" class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
-                </button>
+                </a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDocumentModal">
                     <i class="fas fa-plus"></i> Tambah Dokumen
                 </button>
@@ -38,6 +38,7 @@
                     <th>NAMA DOKUMEN</th>
                     <th>STATUS</th>
                     <th>PEMILIK</th>
+                    <th>JUDUL TA</th>
                     <th>WAKTU UPLOAD</th>
                     <th>AKSI</th>
                 </tr>
@@ -48,13 +49,7 @@
                     <td class="doc-bab">{{ doc.bab }}</td>
                     <td class="doc-nama">{{ doc.nama_dokumen }}</td>
                     <td>
-                        {% if doc.status == 'Disetujui' %}
-                        <span class="status-badge status-disetujui doc-status">Disetujui</span>
-                        {% elif doc.status == 'Revisi' %}
-                        <span class="status-badge status-revisi doc-status">Revisi</span>
-                        {% else %}
-                        <span class="status-badge status-pending doc-status">Pending</span>
-                        {% endif %}
+                        <span class="status-badge status-{{ doc.status|lower }} doc-status">{{ doc.get_status_display }}</span>
                     </td>
                     <td>
                         <div class="user-info doc-pemilik">
@@ -62,6 +57,7 @@
                             <span class="user-role doc-pemilik-prodi">{{ doc.pemilik.program_studi.nama_prodi }}</span>
                         </div>
                     </td>
+                    <td>{{ doc.tugas_akhir.judul|default:"N/A" }}</td>
                     <td>{{ doc.uploaded_at|date:"d F Y, H:i" }}</td>
                     <td class="action-icons">
                         <a class="doc-file-url" href="{% url 'tugas_akhir:document-file' pk=doc.pk %}" target="_blank" title="View File"><i class="fas fa-eye"></i></a>
@@ -273,6 +269,18 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
+        // === EXPORT LINK LOGIC ===
+        const exportLink = document.getElementById('exportLink');
+        if (exportLink) {
+            const exportUrl = "{% url 'tugas_akhir:document-export' %}";
+            // Get current URL's search parameters
+            const currentParams = new URLSearchParams(window.location.search);
+            // We don't want the 'page' parameter in the export link
+            currentParams.delete('page');
+            exportLink.href = `${exportUrl}?${currentParams.toString()}`;
+        }
+
         // === DELETE MODAL LOGIC ===
         const deleteDocumentModal = document.getElementById('deleteDocumentModal');
         if (deleteDocumentModal) {

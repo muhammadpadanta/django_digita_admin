@@ -6,6 +6,11 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.views import View
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
 
 from users.models import Mahasiswa
 from .models import Dokumen, TugasAkhir
@@ -19,7 +24,7 @@ def document_list_view(request):
     search_query = request.GET.get('q', '')
 
     document_queryset = Dokumen.objects.select_related(
-        'pemilik__user', 'pemilik__program_studi'
+        'pemilik__user', 'pemilik__program_studi', 'tugas_akhir'
     ).order_by('-uploaded_at')
 
     if search_query:
@@ -42,6 +47,78 @@ def document_list_view(request):
     }
 
     return render(request, 'core/documents.html', context)
+
+class DocumentExportView(View):
+    """
+    Handles exporting the filtered document list to a polished Excel (.xlsx) file.
+    """
+    def get(self, request, *args, **kwargs):
+        search_query = request.GET.get('q', '')
+
+        # Reuse the filtering logic from the document_list_view
+        document_queryset = Dokumen.objects.select_related(
+            'pemilik__user', 'pemilik__program_studi', 'tugas_akhir'
+        ).order_by('-uploaded_at')
+
+        if search_query:
+            document_queryset = document_queryset.filter(
+                Q(nama_dokumen__icontains=search_query) |
+                Q(pemilik__user__first_name__icontains=search_query) |
+                Q(pemilik__user__last_name__icontains=search_query)
+            )
+
+        # --- Create an in-memory Excel workbook ---
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Documents Export"
+
+        # Define headers and apply bold styling
+        headers = ['BAB', 'Nama Dokumen', 'Status', 'Pemilik', 'Program Studi', 'Judul TA', 'Waktu Upload']
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        # Write data rows
+        for doc in document_queryset:
+            row_data = [
+                doc.get_bab_display(),
+                doc.nama_dokumen,
+                doc.get_status_display(),
+                doc.pemilik.user.get_full_name(),
+                doc.pemilik.program_studi.nama_prodi,
+                doc.tugas_akhir.judul or "N/A",
+                doc.uploaded_at.strftime("%d %B %Y, %H:%M"),
+                ]
+            ws.append(row_data)
+
+        # --- Polishing Touches ---
+        # 1. Auto-adjust column widths
+        for i, column_cells in enumerate(ws.columns, 1):
+            max_length = 0
+            column_letter = get_column_letter(i)
+            for cell in column_cells:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) if max_length < 40 else 40
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        # 2. Freeze the header row
+        ws.freeze_panes = 'A2'
+
+        # --- Prepare and return the HTTP response ---
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="documents_export.xlsx"'
+
+        # Save the workbook directly to the response
+        wb.save(response)
+
+        return response
 
 @login_required
 def serve_document_file_view(request, pk):
@@ -162,6 +239,73 @@ def tugas_akhir_list_view(request):
         'search_query': search_query,
     }
     return render(request, 'core/tugas_akhir.html', context)
+
+class TugasAkhirExportView(View):
+    """
+    Handles exporting the filtered Tugas Akhir list to a polished Excel (.xlsx) file.
+    """
+    def get(self, request, *args, **kwargs):
+        search_query = request.GET.get('q', '')
+
+        tugas_akhir_queryset = TugasAkhir.objects.select_related(
+            'mahasiswa__user',
+            'dosen_pembimbing__user'
+        ).order_by('-created_at')
+
+        if search_query:
+            tugas_akhir_queryset = tugas_akhir_queryset.filter(
+                Q(judul__icontains=search_query) |
+                Q(deskripsi__icontains=search_query) |
+                Q(mahasiswa__user__first_name__icontains=search_query) |
+                Q(mahasiswa__user__last_name__icontains=search_query) |
+                Q(dosen_pembimbing__user__first_name__icontains=search_query) |
+                Q(dosen_pembimbing__user__last_name__icontains=search_query)
+            )
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Tugas Akhir Export"
+
+        headers = ['ID', 'Judul', 'Deskripsi', 'Dosen Pembimbing', 'Mahasiswa', 'NIM', 'Tanggal Dibuat']
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        for ta in tugas_akhir_queryset:
+            row_data = [
+                f"TA{ta.pk:03d}",
+                ta.judul or "-",
+                ta.deskripsi or "-",
+                ta.dosen_pembimbing.user.get_full_name() if ta.dosen_pembimbing and ta.dosen_pembimbing.user else "Belum Ditentukan",
+                ta.mahasiswa.user.get_full_name() if ta.mahasiswa and ta.mahasiswa.user else "N/A",
+                ta.mahasiswa.nim if ta.mahasiswa else "N/A",
+                ta.created_at.strftime("%d %B %Y, %H:%M"),
+                ]
+            ws.append(row_data)
+
+        for i, column_cells in enumerate(ws.columns, 1):
+            max_length = 0
+            column_letter = get_column_letter(i)
+            for cell in column_cells:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) if max_length < 50 else 50
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        ws.freeze_panes = 'A2'
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="tugas_akhir_export.xlsx"'
+
+        wb.save(response)
+
+        return response
 
 def tugas_akhir_detail_view(request, pk):
     """

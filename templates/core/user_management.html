@@ -15,20 +15,21 @@
 
     <div class="main-panel">
         <nav class="tabs-nav">
-            <a href="#" class="tab-link active" data-role="all">Semua User</a>
-            <a href="#" class="tab-link" data-role="mahasiswa">Mahasiswa</a>
-            <a href="#" class="tab-link" data-role="dosen">Dosen</a>
+            <a href="?role=all&q={{ search_query|default_if_none:'' }}" class="tab-link {% if role_filter == 'all' %}active{% endif %}" data-role="all">Semua User</a>
+            <a href="?role=mahasiswa&q={{ search_query|default_if_none:'' }}" class="tab-link {% if role_filter == 'mahasiswa' %}active{% endif %}" data-role="mahasiswa">Mahasiswa</a>
+            <a href="?role=dosen&q={{ search_query|default_if_none:'' }}" class="tab-link {% if role_filter == 'dosen' %}active{% endif %}" data-role="dosen">Dosen</a>
         </nav>
 
         <div class="action-bar">
             <form class="search-wrapper" method="get" action="{% url 'users:user_management_list' %}">
+                <input type="hidden" name="role" value="{{ role_filter|default_if_none:'all' }}">
                 <i class="fas fa-search"></i>
                 <input type="text" name="q" placeholder="Cari user berdasarkan nama..." value="{{ search_query|default_if_none:'' }}">
             </form>
             <div class="buttons-wrapper">
-                <button class="btn btn-secondary">
+                <a id="exportLink" href="#" class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
-                </button>
+                </a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                     <i class="fas fa-plus"></i> Tambah User
                 </button>
@@ -97,7 +98,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align: center;">No users found.</td>
+                    <td colspan="7" style="text-align: center;">No users found.</td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -107,7 +108,7 @@
         {% if is_paginated %}
         <nav class="pagination">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&laquo;</a>
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&role={{ role_filter }}" class="page-arrow">&laquo;</a>
             {% else %}
             <span class="page-arrow disabled">&laquo;</span>
             {% endif %}
@@ -357,23 +358,17 @@
     const dosenData = JSON.parse('{{ dosen_student_json|escapejs }}');
 
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Tab Filtering Logic ---
-        const tabContainer = document.querySelector('.tabs-nav');
-        const userRows = document.querySelectorAll('table.data-table tbody tr');
-        tabContainer.addEventListener('click', (event) => {
-            if (!event.target.matches('.tab-link')) return;
-            event.preventDefault();
 
-            const selectedRole = event.target.getAttribute('data-role');
-            document.querySelectorAll('.tabs-nav .tab-link').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-
-            userRows.forEach(row => {
-                if (row.querySelector('td[colspan="6"]')) return;
-                const itemRole = row.getAttribute('data-role');
-                row.style.display = (selectedRole === 'all' || selectedRole === itemRole) ? '' : 'none';
-            });
-        });
+        // --- Export Link Logic ---
+        const exportLink = document.getElementById('exportLink');
+        if (exportLink) {
+            const exportUrl = "{% url 'users:user_export' %}";
+            // Get current URL's search parameters
+            const currentParams = new URLSearchParams(window.location.search);
+            // We don't want the 'page' parameter in the export link
+            currentParams.delete('page');
+            exportLink.href = `${exportUrl}?${currentParams.toString()}`;
+        }
 
         // --- Students Modal & Pagination Logic ---
         const studentsModal = document.getElementById('studentsModal');

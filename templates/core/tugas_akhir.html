@@ -21,9 +21,9 @@
                 <input type="text" name="q" placeholder="Cari judul, deskripsi, atau nama..." value="{{ search_query|default_if_none:'' }}">
             </form>
             <div class="buttons-wrapper">
-                <button class="btn btn-secondary">
+                <a id="exportLink" href="#" class="btn btn-secondary">
                     <i class="fas fa-file-export"></i> Export
-                </button>
+                </a>
             </div>
         </div>
 
@@ -209,6 +209,16 @@
             });
         }
 
+        // Export Link
+        const exportLink = document.getElementById('exportLink');
+        if (exportLink) {
+            const exportUrl = "{% url 'tugas_akhir:ta-export' %}";
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.delete('page');
+            exportLink.href = `${exportUrl}?${currentParams.toString()}`;
+        }
+
+        // Delete TA Modal
         const deleteTAModal = document.getElementById('deleteTAModal');
         if (deleteTAModal) {
             const deleteForm = document.getElementById('deleteTAForm');
