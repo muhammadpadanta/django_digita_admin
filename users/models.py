@@ -21,6 +21,7 @@ class Dosen(models.Model):
     nik = models.CharField(max_length=50, unique=True)
     jurusan = models.ForeignKey(Jurusan, on_delete=models.PROTECT, related_name='dosen')
 
+
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.nik})"
 

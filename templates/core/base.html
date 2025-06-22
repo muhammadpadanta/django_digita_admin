@@ -43,11 +43,15 @@
         <i class="fas fa-users nav-icon"></i>
         <span>User Management</span>
       </a>
+      <a href="{% url 'tugas_akhir:ta-list' %}" class="{% if request.resolver_match.url_name == 'ta-list' %}active{% endif %}">
+        <i class="fas fa-book-reader nav-icon"></i>
+        <span>TA</span>
+      </a>
       <a href="{% url 'tugas_akhir:document-list' %}" class="{% if request.resolver_match.url_name == 'document-list' %}active{% endif %}">
         <i class="fas fa-file-alt nav-icon"></i>
         <span>Documents</span>
       </a>
-      <a href="{% url 'core:announcements' %}" class="{% if request.resolver_match.url_name == 'announcements' %}active{% endif %}">
+      <a href="{% url 'announcements:list' %}" class="{% if 'announcements' in request.resolver_match.app_names %}active{% endif %}">
         <i class="fas fa-bullhorn nav-icon"></i>
         <span>Pengumuman</span>
       </a>

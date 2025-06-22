@@ -4,8 +4,15 @@ from django.views.generic import FormView, TemplateView, View
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from .forms import AdminLoginForm
-from django.contrib.auth.models import User
+from itertools import chain
+
+from users.models import Mahasiswa, Dosen, User
+from tugas_akhir.models import Dokumen
+from announcements.models import Pengumuman
+from .models import ActivityLog
+
 
 class HomeView(TemplateView):
     template_name = 'core/home.html'
@@ -36,7 +43,6 @@ class LoginView(FormView):
             messages.error(self.request, "Username atau password salah. Mohon periksa kembali.")
             return self.form_invalid(form)
 
-
 class LogoutView(View):
     def post(self, request, *args, **kwargs):
         logout(request)
@@ -47,44 +53,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
-        context['nama_lengkap'] = user.get_full_name() or user.username
 
-        if user.is_superuser:
-            context['role'] = 'Superuser'
-        elif user.is_staff:
-            context['role'] = 'Staff'
+        # --- Data for Stat Cards ---
+        context['total_mahasiswa'] = Mahasiswa.objects.count()
+        context['total_dosen'] = Dosen.objects.count()
+        context['total_dokumen'] = Dokumen.objects.count()
+
+        # --- Data for Recent Announcements Panel ---
+        context['recent_announcements'] = Pengumuman.objects.all()[:3]
+
+        # --- Data for Recent Activity Panel ---
+        context['recent_activities'] = ActivityLog.objects.select_related('actor').all()[:5]
 
         return context
-
-
-class UserManagementView(LoginRequiredMixin, TemplateView):
-    template_name = 'core/user_management.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Get the active tab from the URL query parameter (e.g., /users?tab=mahasiswa)
-        active_tab = self.request.GET.get('tab', 'semua') # Default to 'semua'
-
-
-        if active_tab == 'mahasiswa':
-            # This assumes you have a related profile with a 'role' field.
-            # Adapt this query to your models.
-            users_list = User.objects.filter(userprofile__role='mahasiswa').select_related('userprofile')
-        elif active_tab == 'dosen':
-            users_list = User.objects.filter(userprofile__role='dosen').select_related('userprofile')
-        else:
-            # 'Semua User' tab shows all non-superuser accounts
-            users_list = User.objects.filter(is_superuser=False)
-
-        context['users'] = users_list
-        context['active_tab'] = active_tab
-        return context
-
-
-class DocumentsView(LoginRequiredMixin, TemplateView):
-    template_name = 'core/documents.html'
-
-class AnnouncementsView(LoginRequiredMixin, TemplateView):
-    template_name = 'core/announcements.html'

@@ -1,6 +1,5 @@
 {% extends 'core/base.html' %}
 {% load static %}
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -16,14 +15,15 @@
   <section class="stats-grid">
     <div class="stat-card">
       <h3>Total Mahasiswa Terdaftar</h3>
-      <p>{{ total_mahasiswa|default:"130" }}</p>
+      <p>{{ total_mahasiswa }}</p>
     </div>
     <div class="stat-card">
       <h3>Total Dosen Terdaftar</h3>
-      <p>{{ total_dosen|default:"60" }}</p>
+      <p>{{ total_dosen }}</p>
     </div>
     <div class="stat-card">
       <h3>Total Dokumen Mahasiswa</h3>
+      {# We can wire this up next #}
       <p>{{ total_dokumen|default:"640" }}</p>
     </div>
   </section>
@@ -40,26 +40,17 @@
         </tr>
         </thead>
         <tbody>
+        {% for activity in recent_activities %}
         <tr>
-          <td data-label="User">Agil Angga Anggara</td>
-          <td data-label="Action">Mengupload dokumen: BAB IV</td>
-          <td data-label="Datetime">20 Jun 2025, 16:05</td>
+          <td data-label="User">{{ activity.actor.get_full_name|default:activity.actor.username }}</td>
+          <td data-label="Action">{{ activity.description }}</td>
+          <td data-label="Datetime">{{ activity.created_at|date:"d M Y, H:i" }}</td>
         </tr>
+        {% empty %}
         <tr>
-          <td data-label="User">Abyan Putra Tama</td>
-          <td data-label="Action">Mengupload dokumen: Lembar Revisi</td>
-          <td data-label="Datetime">20 Jun 2025, 14:30</td>
+          <td colspan="3">Tidak ada aktivitas terbaru.</td>
         </tr>
-        <tr>
-          <td data-label="User">Admin</td>
-          <td data-label="Action">Menambahkan pengumuman baru</td>
-          <td data-label="Datetime">19 Jun 2025, 11:00</td>
-        </tr>
-        <tr>
-          <td data-label="User">Maishka Putri</td>
-          <td data-label="Action">Status dokumen disetujui</td>
-          <td data-label="Datetime">18 Jun 2025, 09:12</td>
-        </tr>
+        {% endfor %}
         </tbody>
       </table>
     </div>
@@ -67,23 +58,26 @@
     <div class="panel">
       <h3>Pengumuman Terbaru</h3>
       <div class="announcement-list">
+
+        {% for announcement in recent_announcements %}
         <div class="announcement-item">
-          <h4 class="announcement-item-title"><a href="#">Pembaruan Jadwal Ujian Akhir Semester</a></h4>
-          <p class="announcement-item-date">Periode: 20 Des 2024 - 10 Jan 2025</p>
+          <h4 class="announcement-item-title">
+            {# We can link to a detail page later if you have one #}
+            <a href="#">{{ announcement.judul }}</a>
+          </h4>
+          <p class="announcement-item-date">
+            Periode: {{ announcement.tanggal_mulai|date:"d M Y" }} - {{ announcement.tanggal_selesai|date:"d M Y" }}
+          </p>
         </div>
+        {% empty %}
         <div class="announcement-item">
-          <h4 class="announcement-item-title"><a href="#">Libur Awal Semester Genap</a></h4>
-          <p class="announcement-item-date">Periode: 15 Jan 2025 - 20 Jan 2025</p>
+          <p>Belum ada pengumuman.</p>
         </div>
-        <div class="announcement-item">
-          <h4 class="announcement-item-title"><a href="#">Workshop Penulisan Karya Ilmiah</a></h4>
-          <p class="announcement-item-date">Periode: 05 Feb 2025 - 06 Feb 2025</p>
-        </div>
+        {% endfor %}
+
       </div>
       <div class="panel-footer">
-        <a href="{% url 'core:announcements' %}" class="view-all-link">Lihat Semua &rarr;</a>
+        <a href="{% url 'announcements:list' %}" class="view-all-link">Lihat Semua &rarr;</a>
       </div>
     </div>
-  </section>
-</div>
 {% endblock %}

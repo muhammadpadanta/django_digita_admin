@@ -18,12 +18,10 @@ def document_list_view(request):
     """
     search_query = request.GET.get('q', '')
 
-    # Start with the base queryset
     document_queryset = Dokumen.objects.select_related(
         'pemilik__user', 'pemilik__program_studi'
     ).order_by('-uploaded_at')
 
-    # If a search query is provided, filter the queryset
     if search_query:
         document_queryset = document_queryset.filter(
             Q(nama_dokumen__icontains=search_query) |
@@ -52,11 +50,9 @@ def serve_document_file_view(request, pk):
     """
     document = get_object_or_404(Dokumen, pk=pk)
 
-    # Check for a query parameter to decide the action
     action = request.GET.get('action')
 
     if action == 'download':
-        # Force download by setting specific response headers
         response = HttpResponse(document.file, content_type='application/octet-stream')
         response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
         return response
@@ -78,12 +74,11 @@ def create_document_view(request):
         messages.success(request, 'Dokumen baru telah berhasil ditambahkan.')
         return JsonResponse({'success': True})
     else:
-        # Return form errors as JSON so they can be displayed in the modal
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
 # --- VIEW for deleting documents ---
-@require_POST  # Ensures this view can only be accessed with a POST request
+@require_POST
 @login_required
 def delete_document_view(request, pk):
     """
@@ -92,25 +87,17 @@ def delete_document_view(request, pk):
     document = get_object_or_404(Dokumen, pk=pk)
 
     try:
-        # First, delete the physical file from storage
         document.file.delete(save=False)
-        # Then, delete the model record from the database
         document.delete()
-        # Add a success message for the user
         messages.success(request, f"Dokumen '{document.nama_dokumen}' telah berhasil dihapus.")
     except Exception as e:
         messages.error(request, f"Terjadi kesalahan saat menghapus dokumen: {e}")
 
-    # Redirect back to the document list page
     return redirect('tugas_akhir:document-list')
 
 @login_required
 def edit_document_view(request, pk):
     document = get_object_or_404(Dokumen, pk=pk)
-
-    # You might want more robust permissions here, e.g., only staff/admins can edit
-    # if not request.user.is_staff:
-    #     return JsonResponse({'error': 'You do not have permission to edit.'}, status=403)
 
     if request.method == 'POST':
         form = DokumenEditForm(request.POST, request.FILES, instance=document)
@@ -142,3 +129,77 @@ def edit_document_view(request, pk):
             'current_file_name': document.file.name.split('/')[-1] if document.file else 'No file uploaded',
         }
         return JsonResponse(data)
+
+
+def tugas_akhir_list_view(request):
+    """
+    Fetches all Tugas Akhir objects and renders them in the ta_list.html template.
+    """
+    search_query = request.GET.get('q', '')
+
+    tugas_akhir_queryset = TugasAkhir.objects.select_related(
+        'mahasiswa__user',
+        'dosen_pembimbing__user'
+    ).order_by('-created_at')
+
+    if search_query:
+        tugas_akhir_queryset = tugas_akhir_queryset.filter(
+            Q(judul__icontains=search_query) |
+            Q(deskripsi__icontains=search_query) |
+            Q(mahasiswa__user__first_name__icontains=search_query) |
+            Q(mahasiswa__user__last_name__icontains=search_query) |
+            Q(dosen_pembimbing__user__first_name__icontains=search_query) |
+            Q(dosen_pembimbing__user__last_name__icontains=search_query)
+        )
+
+    # Set up Pagination (optional, but good practice)
+    paginator = Paginator(tugas_akhir_queryset, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'tugas_akhir_list': page_obj,
+        'search_query': search_query,
+    }
+    return render(request, 'core/tugas_akhir.html', context)
+
+def tugas_akhir_detail_view(request, pk):
+    """
+    Returns the details of a single TugasAkhir instance as JSON.
+    """
+    try:
+        ta = TugasAkhir.objects.select_related(
+            'mahasiswa__user',
+            'dosen_pembimbing__user'
+        ).get(pk=pk)
+
+        data = {
+            'id': f"TA{ta.pk:03d}",
+            'judul': ta.judul or "Belum ada judul",
+            'deskripsi': ta.deskripsi or "Tidak ada deskripsi.",
+            'mahasiswa': ta.mahasiswa.user.get_full_name() if ta.mahasiswa and ta.mahasiswa.user else "N/A",
+            'nim': ta.mahasiswa.nim if ta.mahasiswa else "N/A",
+            'dosen_pembimbing': ta.dosen_pembimbing.user.get_full_name() if ta.dosen_pembimbing and ta.dosen_pembimbing.user else "Belum Ditentukan",
+            'created_at': ta.created_at.strftime("%d %B %Y, %H:%M"),
+        }
+        return JsonResponse(data)
+    except TugasAkhir.DoesNotExist:
+        return JsonResponse({'error': 'Tugas Akhir not found'}, status=404)
+
+
+@require_POST
+@login_required
+def delete_tugas_akhir_view(request, pk):
+    """
+    Handles the deletion of a TugasAkhir instance.
+    """
+    tugas_akhir = get_object_or_404(TugasAkhir, pk=pk)
+
+    try:
+        ta_title = tugas_akhir.judul or f"TA Mahasiswa {tugas_akhir.mahasiswa.user.get_full_name()}"
+        tugas_akhir.delete()
+        messages.success(request, f"Tugas Akhir '{ta_title}' telah berhasil dihapus.")
+    except Exception as e:
+        messages.error(request, f"Terjadi kesalahan saat menghapus Tugas Akhir: {e}")
+
+    return redirect('tugas_akhir:ta-list')

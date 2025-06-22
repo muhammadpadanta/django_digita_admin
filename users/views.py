@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.views.generic import ListView, View
+from django.views.generic import ListView, View, TemplateView
 
 from tugas_akhir.models import TugasAkhir
 from .forms import UserCreationAdminForm, UserEditForm
@@ -32,7 +32,6 @@ class PasswordResetRequestView(View):
     - On POST, validates the email, generates a reset link, and sends it.
     """
     form_template_name = 'password_reset/password_reset_request_form.html'
-    # CORRECTED: Added the 'users:' namespace here
     success_url_name = 'users:password_reset_done'
     serializer_class = PasswordResetRequestSerializer
 
@@ -57,7 +56,6 @@ class PasswordResetRequestView(View):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-        # CORRECTED: Added the 'users:' namespace here
         reset_url = request.build_absolute_uri(
             reverse('users:password_reset_confirm_page', kwargs={'uidb64': uid, 'token': token})
         )
@@ -322,4 +320,3 @@ class UserDeleteView(LoginRequiredMixin, View):
         except User.DoesNotExist:
             messages.error(request, "The user you are trying to delete does not exist.")
         return redirect('users:user_management_list')
-

@@ -13,10 +13,10 @@
 
 .announcement-card {
     background-color: #fff;
-    padding: 24px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    border-left: 5px solid #0F47AD;
+    border-left: 4px solid #0F47AD;
 }
 
 .announcement-header {
@@ -61,7 +61,7 @@
     font-size: 0.9em;
     color: #6c757d;
     font-weight: 500;
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
 }
 .announcement-period i {
     margin-right: 8px;
@@ -70,7 +70,7 @@
 .announcement-description {
     color: #495057;
     line-height: 1.7;
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
 }
 
 .announcement-attachment a {
@@ -162,4 +162,38 @@
         padding: 8px 14px; /* Make pagination buttons smaller */
         font-size: 0.9em;
     }
+}
+
+/* Basic styling for error messages and delete button */
+.error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+.delete-btn-icon {
+    background: none;
+    border: none;
+    color: #dc3545; /* Red color for delete */
+    cursor: pointer;
+    padding: 0;
+    font-size: 1em;
+}
+.delete-btn-icon:hover {
+    color: #a71d2a;
+}
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+}
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
 }

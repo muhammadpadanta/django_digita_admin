@@ -1,0 +1,236 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Tugas Akhir{% endblock %}
+
+{% block content %}
+<div class="content-block">
+    <header class="dashboard-header">
+        <h1>Tugas Akhir</h1>
+        <div class="header-actions">
+            <button title="Profile Settings"><i class="fas fa-user-circle"></i></button>
+            <button title="General Settings"><i class="fas fa-cog"></i></button>
+        </div>
+    </header>
+
+    <div class="main-panel">
+
+        <div class="action-bar">
+            <form class="search-wrapper" method="get" action="">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" placeholder="Cari judul, deskripsi, atau nama..." value="{{ search_query|default_if_none:'' }}">
+            </form>
+            <div class="buttons-wrapper">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>JUDUL</th>
+                    <th>DESKRIPSI</th>
+                    <th>DOSEN PEMBIMBING</th>
+                    <th>NAMA MAHASISWA</th>
+                    <th>AKSI</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for ta in tugas_akhir_list %}
+                <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#taDetailModal" data-ta-id="{{ ta.pk }}" style="cursor: pointer;">
+                    <td>TA{{ ta.pk|stringformat:"03d" }}</td>
+                    <td>{{ ta.judul|default:"-" }}</td>
+                    <td class="truncate-cell" title="{{ ta.deskripsi }}">{{ ta.deskripsi }}</td>
+                    <td>
+                        {# Safely access the lecturer's name #}
+                        {{ ta.dosen_pembimbing.user.get_full_name|default:"Belum Ditentukan" }}
+                    </td>
+                    <td>
+                        {# Safely access the student's name #}
+                        {{ ta.mahasiswa.user.get_full_name|default:"N/A" }}
+                    </td>
+                    <td class="action-icons">
+                        <a href="#" class="text-danger delete-ta-btn"
+                           data-bs-toggle="modal"
+                           data-bs-target="#deleteTAModal"
+                           data-ta-name="{{ ta.judul|default:'Tanpa Judul' }}"
+                           data-delete-url="{% url 'tugas_akhir:ta-delete' pk=ta.pk %}"
+                           title="Delete TA"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">
+                        {% if search_query %}
+                        Tidak ada Tugas Akhir yang cocok dengan pencarian Anda.
+                        {% else %}
+                        Belum ada data Tugas Akhir.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if tugas_akhir_list.has_other_pages %}
+        <nav class="pagination">
+            {% if tugas_akhir_list.has_previous %}
+            <a href="?page={{ tugas_akhir_list.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&laquo;</a>
+            {% else %}
+            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&laquo;</span>
+            {% endif %}
+
+            {% for i in tugas_akhir_list.paginator.page_range %}
+            {% if tugas_akhir_list.number == i %}
+            <a href="#" class="page-number active">{{ i }}</a>
+            {% elif i > tugas_akhir_list.number|add:'-3' and i < tugas_akhir_list.number|add:'3' %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == tugas_akhir_list.paginator.page_range.0 or i == tugas_akhir_list.paginator.page_range.1 %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == tugas_akhir_list.paginator.num_pages or i == tugas_akhir_list.paginator.num_pages|add:'-1' %}
+            <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-number">{{ i }}</a>
+            {% elif i == tugas_akhir_list.number|add:'-3' or i == tugas_akhir_list.number|add:'3' %}
+            <span class="page-number">...</span>
+            {% endif %}
+            {% endfor %}
+
+            {% if tugas_akhir_list.has_next %}
+            <a href="?page={{ tugas_akhir_list.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&raquo;</a>
+            {% else %}
+            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&raquo;</span>
+            {% endif %}
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TA Detail Modal -->
+<div class="modal fade" id="taDetailModal" tabindex="-1" aria-labelledby="taDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taDetailModalLabel">Detail Tugas Akhir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-loader" style="text-align: center; padding: 20px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="modal-content-display" style="display: none;">
+                    <h4 id="modal-judul" class="mb-3"></h4>
+                    <p><strong>ID:</strong> <span id="modal-id"></span></p>
+                    <p><strong>Mahasiswa:</strong> <span id="modal-mahasiswa"></span> (<span id="modal-nim"></span>)</p>
+                    <p><strong>Dosen Pembimbing:</strong> <span id="modal-dosen"></span></p>
+                    <hr>
+                    <p><strong>Deskripsi:</strong></p>
+                    <p id="modal-deskripsi" style="white-space: pre-wrap;"></p>
+                    <hr>
+                    <small class="text-muted">Dibuat pada: <span id="modal-created-at"></span></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete TA Confirmation Modal -->
+<div class="modal fade" id="deleteTAModal" tabindex="-1" aria-labelledby="deleteTAModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTAModalLabel">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus Tugas Akhir <strong id="taNameToDelete"></strong>?</p>
+                <p class="text-danger">Tindakan ini tidak dapat diurungkan.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteTAForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const taDetailModal = document.getElementById('taDetailModal');
+        if (taDetailModal) {
+            const loader = document.getElementById('modal-loader');
+            const contentDisplay = document.getElementById('modal-content-display');
+
+            taDetailModal.addEventListener('show.bs.modal', async function (event) {
+                const row = event.relatedTarget;
+                const taId = row.getAttribute('data-ta-id');
+                const url = `/tugas-akhir/ta/${taId}/details/`;
+
+                contentDisplay.style.display = 'none';
+                loader.style.display = 'block';
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+
+                    document.getElementById('modal-id').textContent = data.id;
+                    document.getElementById('modal-judul').textContent = data.judul;
+                    document.getElementById('modal-mahasiswa').textContent = data.mahasiswa;
+                    document.getElementById('modal-nim').textContent = data.nim;
+                    document.getElementById('modal-dosen').textContent = data.dosen_pembimbing;
+                    document.getElementById('modal-deskripsi').textContent = data.deskripsi;
+                    document.getElementById('modal-created-at').textContent = data.created_at;
+
+                    loader.style.display = 'none';
+                    contentDisplay.style.display = 'block';
+
+                } catch (error) {
+                    console.error('Error fetching TA details:', error);
+                    document.getElementById('modal-content-display').innerHTML = '<p class="text-danger">Gagal memuat detail. Silakan coba lagi.</p>';
+                    loader.style.display = 'none';
+                    contentDisplay.style.display = 'block';
+                }
+            });
+        }
+
+        const deleteTAModal = document.getElementById('deleteTAModal');
+        if (deleteTAModal) {
+            const deleteForm = document.getElementById('deleteTAForm');
+            const taNameSpan = document.getElementById('taNameToDelete');
+
+            deleteTAModal.addEventListener('show.bs.modal', function (event) {
+                event.stopPropagation();
+
+                const button = event.relatedTarget;
+                const taName = button.getAttribute('data-ta-name');
+                const deleteUrl = button.getAttribute('data-delete-url');
+
+                taNameSpan.textContent = `'${taName}'`;
+                deleteForm.action = deleteUrl;
+            });
+
+            document.querySelectorAll('.delete-ta-btn').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -22,24 +22,29 @@ ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(' ') if ALLOWED_HOSTS_STRING else ['l
 
 
 # --- Application Definitions ---
-# A list of all Django applications that are activated in this Django project.
 INSTALLED_APPS = [
+    # --- Local Apps First ---
+    # This ensures your model customizations are loaded before other apps use them.
+    'users.apps.UsersConfig',
+    'core.apps.CoreConfig',
+    'tugas_akhir.apps.TugasAkhirConfig',
+    'announcements',
+
+    # --- Third-Party Apps ---
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+    'django.forms',
     'django_rich',
+
+    # --- Django Core Apps Last ---
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    #"whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
-    'users.apps.UsersConfig',
-    'tugas_akhir.apps.TugasAkhirConfig',
-    'django.forms',
-    'core.apps.CoreConfig',
 ]
 
 # --- Middleware Configuration ---

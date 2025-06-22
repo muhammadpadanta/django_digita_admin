@@ -8,8 +8,6 @@
   <header class="dashboard-header">
     <h1>Pengumuman</h1>
     <div class="header-actions">
-      <button><i class="fas fa-user-circle"></i></button>
-      <button><i class="fas fa-cog"></i></button>
     </div>
   </header>
 
@@ -20,109 +18,106 @@
   </div>
 
   <div class="announcements-container">
-
+    {# Loop through announcements from the view #}
+    {% for ann in announcements %}
     <div class="announcement-card">
       <div class="announcement-header">
-        <h3 class="announcement-title">Pembaruan Jadwal Ujian Akhir Semester</h3>
+        <h3 class="announcement-title">{{ ann.judul }}</h3>
         <div class="announcement-actions">
-          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
+          {# Edit button with data attributes for JavaScript #}
+          <a href="#" class="edit-btn" data-id="{{ ann.id }}" title="Edit"><i class="fas fa-edit"></i></a>
+
+          {# Delete form #}
+          <a href="#" class="delete-btn"
+             data-announcement-id="{{ ann.id }}"
+             data-announcement-title="{{ ann.judul }}"
+             title="Delete">
+            <i class="fas fa-trash-alt"></i>
+          </a>
         </div>
       </div>
       <p class="announcement-period">
-        <i class="fas fa-clock"></i> Periode: 20 Des 2024 - 10 Jan 2025
+        <i class="fas fa-clock"></i> Periode: {{ ann.tanggal_mulai|date:"d M Y" }} - {{ ann.tanggal_selesai|date:"d M Y" }}
       </p>
       <p class="announcement-description">
-        Diberitahukan kepada seluruh mahasiswa bahwa telah terjadi pembaruan pada jadwal Ujian Akhir Semester (UAS) untuk semester ganjil. Mohon untuk memeriksa jadwal terbaru yang terlampir pada pengumuman ini. Pastikan Anda melihat jadwal sesuai dengan program studi masing-masing.
+        {{ ann.deskripsi|linebreaksbr }}
       </p>
+      {% if ann.lampiran %}
       <div class="announcement-attachment">
-        <a href="#" download>
-          <i class="fas fa-paperclip"></i> Jadwal_UAS_Terbaru.pdf
+        <a href="{{ ann.lampiran.url }}" download>
+          <i class="fas fa-paperclip"></i> {{ ann.lampiran.name|cut:"attachments/announcements/" }}
         </a>
       </div>
+      {% endif %}
     </div>
-
-    <div class="announcement-card">
-      <div class="announcement-header">
-        <h3 class="announcement-title">Libur Awal Semester Genap</h3>
-        <div class="announcement-actions">
-          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-        </div>
-      </div>
-      <p class="announcement-period">
-        <i class="fas fa-clock"></i> Periode: 15 Jan 2025 - 20 Jan 2025
-      </p>
-      <p class="announcement-description">
-        Sehubungan dengan akan dimulainya semester genap, maka diumumkan bahwa kegiatan akademik akan diliburkan. Kegiatan perkuliahan akan dimulai kembali pada tanggal 21 Januari 2025. Selamat menikmati masa libur.
-      </p>
-    </div>
-
-    <div class="announcement-card">
-      <div class="announcement-header">
-        <h3 class="announcement-title">Workshop Penulisan Karya Ilmiah</h3>
-        <div class="announcement-actions">
-          <a href="#" title="Edit"><i class="fas fa-edit"></i></a>
-          <a href="#" title="Delete"><i class="fas fa-trash-alt"></i></a>
-        </div>
-      </div>
-      <p class="announcement-period">
-        <i class="fas fa-clock"></i> Periode: 05 Feb 2025 - 06 Feb 2025
-      </p>
-      <p class="announcement-description">
-        Fakultas akan mengadakan workshop wajib mengenai teknik penulisan karya ilmiah bagi mahasiswa tingkat akhir. Workshop ini bertujuan untuk meningkatkan kualitas skripsi dan tugas akhir. Informasi pendaftaran dan detail acara dapat dilihat pada lampiran.
-      </p>
-      <div class="announcement-attachment">
-        <a href="#" download>
-          <i class="fas fa-paperclip"></i> Panduan_Workshop_Karya_Ilmiah.pdf
-        </a>
-      </div>
-    </div>
-
+    {% empty %}
+    <p>Belum ada pengumuman yang tersedia.</p>
+    {% endfor %}
   </div>
 
+  {# Dynamic Pagination #}
+  {% if is_paginated %}
   <nav class="pagination">
-    <a href="#" class="page-arrow">&laquo;</a>
-    <a href="#" class="page-number active">1</a>
-    <a href="#" class="page-number">2</a>
-    <a href="#" class="page-number">3</a>
-    <a href="#" class="page-arrow">&raquo;</a>
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="page-arrow">&laquo;</a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+    <a href="?page={{ num }}" class="page-number active">{{ num }}</a>
+    {% else %}
+    <a href="?page={{ num }}" class="page-number">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="page-arrow">&raquo;</a>
+    {% endif %}
   </nav>
-
+  {% endif %}
 </div>
-
 
 <div id="announcement-modal" class="modal-backdrop" style="display: none;">
   <div class="modal-panel">
     <div class="modal-header">
-      <h3 class="modal-title">Tambah Pengumuman Baru</h3>
+      <h3 class="modal-title" id="modal-title">Tambah Pengumuman Baru</h3>
       <button class="modal-close-btn" id="modal-close-btn">&times;</button>
     </div>
     <div class="modal-body">
-      <form>
+      {# The form will be submitted via JavaScript #}
+      <form id="announcement-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        <input type="hidden" name="announcement_id" id="announcement-id">
+
         <div class="form-group">
-          <label for="ann-title">Judul Pengumuman</label>
-          <input type="text" id="ann-title" name="title" required>
+          <label for="id_judul">Judul Pengumuman</label>
+          {{ form.judul }}  {# THIS LINE RENDERS THE TEXT INPUT #}
+          <div class="error-message" id="error-judul"></div>
         </div>
         <div class="form-group">
-          <label for="ann-desc">Deskripsi</label>
-          <textarea id="ann-desc" name="description" rows="5" required></textarea>
+          <label for="id_deskripsi">Deskripsi</label>
+          {{ form.deskripsi }}  {# THIS LINE RENDERS THE TEXTAREA #}
+          <div class="error-message" id="error-deskripsi"></div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="ann-start-date">Tanggal Mulai</label>
-            <input type="date" id="ann-start-date" name="start_date" required>
+            <label for="id_tanggal_mulai">Tanggal Mulai</label>
+            {{ form.tanggal_mulai }}  {# THIS LINE RENDERS THE DATE INPUT #}
+            <div class="error-message" id="error-tanggal_mulai"></div>
           </div>
           <div class="form-group">
-            <label for="ann-end-date">Tanggal Selesai</label>
-            <input type="date" id="ann-end-date" name="end_date" required>
+            <label for="id_tanggal_selesai">Tanggal Selesai</label>
+            {{ form.tanggal_selesai }}  {# THIS LINE RENDERS THE DATE INPUT #}
+            <div class="error-message" id="error-tanggal_selesai"></div>
           </div>
         </div>
         <div class="form-group">
-          <label for="ann-attachment">Lampiran (Opsional)</label>
-          <input type="file" id="ann-attachment" name="attachment" class="file-input">
+          <label for="id_lampiran">Lampiran (Opsional)</label>
+          {{ form.lampiran }}  {# THIS LINE RENDERS THE FILE INPUT #}
+          <div id="attachment-info"></div>
+          <div class="error-message" id="error-lampiran"></div>
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan</button>
@@ -132,30 +127,148 @@
   </div>
 </div>
 
+<div id="delete-announcement-modal" class="modal-backdrop" style="display: none;">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h3 class="modal-title">Konfirmasi Hapus</h3>
+      <button class="modal-close-btn" data-close-button>&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Apakah Anda yakin ingin menghapus pengumuman <strong id="announcement-name-to-delete"></strong>?</p>
+      <p style="color: #dc3545;">Tindakan ini tidak dapat diurungkan.</p>
+    </div>
+    <div class="modal-footer">
+      <form id="delete-announcement-form" method="POST" action="">
+        {% csrf_token %}
+        <button type="button" class="btn btn-secondary" data-close-button>Batal</button>
+        <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('announcement-modal');
+    // --- General Modal Elements ---
+    const addEditModal = document.getElementById('announcement-modal');
+    const deleteModal = document.getElementById('delete-announcement-modal');
+
+    // --- Add/Edit Modal ---
     const openBtn = document.getElementById('add-announcement-btn');
-    const closeBtn = document.getElementById('modal-close-btn');
-    const cancelBtn = document.getElementById('modal-cancel-btn');
+    const addEditForm = document.getElementById('announcement-form');
+    const modalTitle = document.getElementById('modal-title');
+    const createUrl = "{% url 'announcements:create' %}";
 
-    function openModal() {
-      modal.style.display = 'flex';
+    function openAddEditModal() { addEditModal.style.display = 'flex'; }
+    function closeAddEditModal() { addEditModal.style.display = 'none'; }
+
+    // Logic to open the modal for CREATING a new announcement
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        addEditForm.reset();
+        modalTitle.textContent = 'Tambah Pengumuman Baru';
+        addEditForm.setAttribute('action', createUrl);
+        document.getElementById('attachment-info').innerHTML = '';
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        openAddEditModal();
+      });
     }
 
-    function closeModal() {
-      modal.style.display = 'none';
-    }
+    // Generic close functionality for the add/edit modal
+    addEditModal.addEventListener('click', e => {
+      if (e.target.closest('.modal-close-btn') || e.target.closest('#modal-cancel-btn') || e.target === addEditModal) {
+        closeAddEditModal();
+      }
+    });
 
-    openBtn.addEventListener('click', openModal);
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
+    // --- FINALIZED EDIT LOGIC ---
+    document.querySelectorAll('.edit-btn').forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const annId = this.dataset.id;
+        const updateUrl = `/announcements/${annId}/update/`;
 
-    modal.addEventListener('click', function(event) {
-      if (event.target === modal) {
-        closeModal();
+        fetch(updateUrl)
+                .then(response => {
+                  if (!response.ok) { throw new Error(`Server responded with status: ${response.status}`); }
+                  return response.json();
+                })
+                .then(data => {
+                  // This uses the correct IDs from your forms.py widgets
+                  document.querySelector('#announcement-form #ann-title').value = data.judul;
+                  document.querySelector('#announcement-form #ann-desc').value = data.deskripsi;
+                  document.querySelector('#announcement-form #ann-start-date').value = data.tanggal_mulai;
+                  document.querySelector('#announcement-form #ann-end-date').value = data.tanggal_selesai;
+
+                  const attachmentInfo = document.getElementById('attachment-info');
+                  if (data.lampiran_url) {
+                    attachmentInfo.innerHTML = `<p>Current file: <a href="${data.lampiran_url}" target="_blank">Download</a></p>`;
+                  } else {
+                    attachmentInfo.innerHTML = '';
+                  }
+
+                  modalTitle.textContent = 'Edit Pengumuman';
+                  addEditForm.setAttribute('action', updateUrl);
+                  openAddEditModal();
+                })
+                .catch(error => {
+                  console.error('Error fetching announcement data:', error);
+                  alert('Could not load announcement data. Please check the developer console (F12) for more details.');
+                });
+      });
+    });
+
+    // Logic for SUBMITTING the add/edit form
+    addEditForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const actionUrl = this.getAttribute('action');
+
+      fetch(actionUrl, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+      })
+              .then(response => response.json())
+              .then(data => {
+                if (data.status === 'success') {
+                  window.location.reload();
+                } else if (data.status === 'error') {
+                  document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                  for (const field in data.errors) {
+                    const errorEl = document.getElementById(`error-${field}`);
+                    if (errorEl) { errorEl.textContent = data.errors[field][0]; }
+                  }
+                }
+              });
+    });
+
+    // --- DELETE LOGIC ---
+    const deleteForm = document.getElementById('delete-announcement-form');
+    const announcementNameSpan = document.getElementById('announcement-name-to-delete');
+
+    function openDeleteModal() { deleteModal.style.display = 'flex'; }
+    function closeDeleteModal() { deleteModal.style.display = 'none'; }
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const annId = this.dataset.announcementId;
+        const annTitle = this.dataset.announcementTitle;
+        const deleteUrl = `{% url 'announcements:delete' 0 %}`.replace('0', annId);
+
+        announcementNameSpan.textContent = `'${annTitle}'`;
+        deleteForm.setAttribute('action', deleteUrl);
+        openDeleteModal();
+      });
+    });
+
+    deleteModal.addEventListener('click', e => {
+      if (e.target === deleteModal || e.target.closest('[data-close-button]')) {
+        closeDeleteModal();
       }
     });
   });
 </script>
+
 {% endblock %}

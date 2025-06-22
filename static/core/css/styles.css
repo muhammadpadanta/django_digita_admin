@@ -569,3 +569,18 @@ body.login-body {
     max-width: 95%;
   }
 }
+
+/* === Tugas Akhir Styles === */
+/* For truncating long text in table cells */
+.truncate-cell {
+  max-width: 250px; /* You can adjust this width as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hover effect for clickable table rows */
+.clickable-row:hover {
+  background-color: #f8f9fa; /* A light grey background color */
+  transition: background-color 0.2s ease-in-out;
+}
