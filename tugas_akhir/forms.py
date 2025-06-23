@@ -4,6 +4,7 @@ from django.db import transaction
 from core.models import ActivityLog
 from django.contrib.auth.models import User
 from core.utils import calculate_file_hash
+from .models import Dokumen, TugasAkhir, Dosen
 
 
 class DokumenEditForm(forms.ModelForm):
@@ -137,3 +138,50 @@ class DokumenCreateForm(forms.ModelForm):
             self.save_m2m()
 
         return instance
+
+class TugasAkhirEditForm(forms.ModelForm):
+    """
+    Form for editing an existing TugasAkhir instance.
+    """
+    dosen_pembimbing = forms.ModelChoiceField(
+        queryset=Dosen.objects.select_related('user').all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label="Dosen Pembimbing"
+    )
+
+    class Meta:
+        model = TugasAkhir
+        fields = ['judul', 'deskripsi', 'dosen_pembimbing']
+        widgets = {
+            'judul': forms.TextInput(attrs={'class': 'form-control'}),
+            'deskripsi': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.dosen_pembimbing:
+            self.fields['dosen_pembimbing'].initial = self.instance.dosen_pembimbing.pk
+
+    @transaction.atomic
+    def save(self, commit=True):
+        """
+        Overrides the default save method to also update the `dosen_pembimbing`
+        on the related Mahasiswa instance, ensuring data consistency.
+        """
+        updated_ta = super().save(commit=False)
+
+        mahasiswa = updated_ta.mahasiswa
+
+        new_advisor = updated_ta.dosen_pembimbing
+
+        if mahasiswa.dosen_pembimbing != new_advisor:
+            mahasiswa.dosen_pembimbing = new_advisor
+            if commit:
+                mahasiswa.save()
+
+        if commit:
+            updated_ta.save()
+            self.save_m2m()
+
+        return updated_ta

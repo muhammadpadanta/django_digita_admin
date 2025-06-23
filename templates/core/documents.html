@@ -161,6 +161,7 @@
                                 {% for ta in tugas_akhirs %}<option value="{{ ta.pk }}">{{ ta }}</option>{% endfor %}
                             </select>
                             <div class="invalid-feedback" id="error-tugas_akhir"></div>
+                            <div id="edit-ta-error-message" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="edit-pemilik" class="form-label">Pemilik</label>
@@ -222,9 +223,11 @@
                         <div class="col-md-6 mb-3">
                             <label for="create-tugas-akhir" class="form-label">Tugas Akhir</label>
                             <select id="create-tugas-akhir" name="tugas_akhir" class="form-select" required>
+                                <option value="" disabled selected>Pilih Pemilik terlebih dahulu</option>
                                 {% for ta in tugas_akhirs %}<option value="{{ ta.pk }}">{{ ta }}</option>{% endfor %}
                             </select>
                             <div class="invalid-feedback" id="create-error-tugas_akhir"></div>
+                            <div id="create-ta-error-message" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="create-pemilik" class="form-label">Pemilik</label>
@@ -270,23 +273,64 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
+        // === REUSABLE FUNCTION TO FETCH AND SET TUGAS AKHIR ===
+        async function updateTugasAkhirForPemilik(pemilikId, taSelectElement, errorElement) {
+            // Reset state
+            taSelectElement.disabled = true;
+            taSelectElement.value = '';
+            errorElement.textContent = '';
+
+            if (!pemilikId) {
+                taSelectElement.innerHTML = '<option value="" disabled selected>Pilih Pemilik terlebih dahulu</option>';
+                {% for ta in tugas_akhirs %}
+                taSelectElement.innerHTML += `<option value="{{ ta.pk }}">{{ ta }}</option>`;
+                {% endfor %}
+                return;
+            }
+
+            try {
+                const response = await fetch(`/tugas-akhir/api/get-ta-for-mahasiswa/${pemilikId}/`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Find if option exists, if not, create it.
+                    let option = taSelectElement.querySelector(`option[value="${data.tugas_akhir_id}"]`);
+                    if (!option) {
+                        option = new Option(data.tugas_akhir_str, data.tugas_akhir_id);
+                        taSelectElement.add(option);
+                    }
+                    // Set the value and disable the field
+                    taSelectElement.value = data.tugas_akhir_id;
+                    taSelectElement.disabled = true;
+                } else {
+                    // Handle case where student has no TA
+                    errorElement.textContent = data.error || 'Mahasiswa ini belum memiliki data Tugas Akhir.';
+                    taSelectElement.value = '';
+                }
+            } catch (error) {
+                console.error('Error fetching Tugas Akhir data:', error);
+                errorElement.textContent = 'Gagal memuat data Tugas Akhir.';
+            }
+        }
+
+
         // === EXPORT LINK LOGIC ===
         const exportLink = document.getElementById('exportLink');
         if (exportLink) {
             const exportUrl = "{% url 'tugas_akhir:document-export' %}";
-            // Get current URL's search parameters
             const currentParams = new URLSearchParams(window.location.search);
-            // We don't want the 'page' parameter in the export link
             currentParams.delete('page');
             exportLink.href = `${exportUrl}?${currentParams.toString()}`;
         }
+
 
         // === DELETE MODAL LOGIC ===
         const deleteDocumentModal = document.getElementById('deleteDocumentModal');
         if (deleteDocumentModal) {
             const deleteForm = document.getElementById('deleteDocumentForm');
             const documentNameSpan = document.getElementById('documentNameToDelete');
-            deleteDocumentModal.addEventListener('show.bs.modal', function (event) {
+            deleteDocumentModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
                 const documentName = button.getAttribute('data-document-name');
                 const deleteUrl = button.getAttribute('data-delete-url');
@@ -295,11 +339,21 @@
             });
         }
 
+
         // === EDIT MODAL LOGIC ===
         const editDocumentModal = document.getElementById('editDocumentModal');
         if (editDocumentModal) {
             const editForm = document.getElementById('editDocumentForm');
             const saveButton = document.getElementById('saveDocumentChangesBtn');
+            const editPemilikSelect = document.getElementById('edit-pemilik');
+            const editTaSelect = document.getElementById('edit-tugas-akhir');
+            const editTaError = document.getElementById('edit-ta-error-message');
+
+            // Listen for changes on the Pemilik dropdown
+            editPemilikSelect.addEventListener('change', (event) => {
+                updateTugasAkhirForPemilik(event.target.value, editTaSelect, editTaError);
+            });
+
             editDocumentModal.addEventListener('show.bs.modal', async (event) => {
                 const button = event.relatedTarget;
                 const documentId = button.getAttribute('data-document-id');
@@ -307,11 +361,13 @@
                 editForm.action = url;
                 editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                 editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+                editTaError.textContent = ''; // Clear TA error
+
                 try {
                     const response = await fetch(url);
                     const data = await response.json();
-                    editForm.querySelector('#edit-tugas-akhir').value = data.tugas_akhir;
-                    editForm.querySelector('#edit-pemilik').value = data.pemilik;
+
+                    // Set form values from fetched data
                     editForm.querySelector('#edit-nama-dokumen').value = data.nama_dokumen;
                     editForm.querySelector('#edit-bab').value = data.bab;
                     editForm.querySelector('#edit-status').value = data.status;
@@ -324,12 +380,20 @@
                         fileDisplay.style.display = 'none';
                     }
                     editForm.querySelector('#edit-file').value = '';
+
+                    // Set Pemilik and then trigger the update for Tugas Akhir
+                    editPemilikSelect.value = data.pemilik;
+                    await updateTugasAkhirForPemilik(data.pemilik, editTaSelect, editTaError);
+
                 } catch (error) {
                     console.error('Error fetching document data:', error);
                 }
             });
+
             saveButton.addEventListener('click', async () => {
                 const formData = new FormData(editForm);
+                // Re-enable the TA select just before submitting so the value is included
+                editTaSelect.disabled = false;
                 const url = editForm.action;
                 try {
                     const response = await fetch(url, {
@@ -341,6 +405,8 @@
                     if (data.success) {
                         window.location.reload();
                     } else {
+                        // If submission fails, re-disable the TA select for the user
+                        editTaSelect.disabled = true;
                         editForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                         editForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
                         for (const field in data.errors) {
@@ -352,21 +418,46 @@
                     }
                 } catch (error) {
                     console.error('Error submitting form:', error);
+                    // Also re-disable on network error
+                    editTaSelect.disabled = true;
                 }
             });
         }
 
+
         // === CREATE MODAL LOGIC ===
         const createDocumentModal = document.getElementById('createDocumentModal');
-        if(createDocumentModal) {
+        if (createDocumentModal) {
             const createForm = document.getElementById('createDocumentForm');
             const saveButton = document.getElementById('saveNewDocumentBtn');
-            createDocumentModal.addEventListener('hidden.bs.modal', function () {
+            const createPemilikSelect = document.getElementById('create-pemilik');
+            const createTaSelect = document.getElementById('create-tugas-akhir');
+            const createTaError = document.getElementById('create-ta-error-message');
+
+            // Listen for changes on the Pemilik dropdown
+            createPemilikSelect.addEventListener('change', (event) => {
+                updateTugasAkhirForPemilik(event.target.value, createTaSelect, createTaError);
+            });
+
+            createDocumentModal.addEventListener('hidden.bs.modal', function() {
                 createForm.reset();
                 createForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                 createForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+                // Reset the TA field to its initial state
+                createTaError.textContent = '';
+                createTaSelect.disabled = true; // Should be disabled initially
+                createTaSelect.value = '';
             });
+
+            // Initialize state on modal open
+            createDocumentModal.addEventListener('show.bs.modal', function() {
+                createTaSelect.disabled = true;
+                createTaSelect.value = '';
+            });
+
             saveButton.addEventListener('click', async () => {
+                // Re-enable the TA select just before submitting
+                createTaSelect.disabled = false;
                 const formData = new FormData(createForm);
                 const url = createForm.action;
                 try {
@@ -379,6 +470,8 @@
                     if (data.success) {
                         window.location.reload();
                     } else {
+                        // If submission fails, re-disable the TA select
+                        createTaSelect.disabled = true;
                         createForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                         createForm.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
                         for (const field in data.errors) {
@@ -390,6 +483,8 @@
                     }
                 } catch (error) {
                     console.error('Error submitting form:', error);
+                    // Also re-disable on network error
+                    createTaSelect.disabled = true;
                 }
             });
         }

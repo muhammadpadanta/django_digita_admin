@@ -54,6 +54,12 @@
                         {{ ta.mahasiswa.user.get_full_name|default:"N/A" }}
                     </td>
                     <td class="action-icons">
+                        <a href="#" class="text-primary me-2 edit-ta-btn"
+                           data-bs-toggle="modal"
+                           data-bs-target="#editTAModal"
+                           data-edit-url="{% url 'tugas_akhir:ta-edit' pk=ta.pk %}"
+                           title="Edit TA"><i class="fas fa-edit"></i></a>
+
                         <a href="#" class="text-danger delete-ta-btn"
                            data-bs-toggle="modal"
                            data-bs-target="#deleteTAModal"
@@ -163,12 +169,49 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="editTAModal" tabindex="-1" aria-labelledby="editTAModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTAModalLabel">Edit Tugas Akhir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTAForm" method="POST" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="edit-judul" class="form-label">Judul</label>
+                        <input type="text" class="form-control" id="edit-judul" name="judul">
+                        <div class="invalid-feedback" id="error-edit-judul"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-deskripsi" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="edit-deskripsi" name="deskripsi" rows="4"></textarea>
+                        <div class="invalid-feedback" id="error-edit-deskripsi"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-dosen" class="form-label">Dosen Pembimbing</label>
+                        <select class="form-select" id="edit-dosen" name="dosen_pembimbing">
+                        </select>
+                        <div class="invalid-feedback" id="error-edit-dosen_pembimbing"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" form="editTAForm" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 {{ block.super }}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // This section for the Detail Modal is correct.
         const taDetailModal = document.getElementById('taDetailModal');
         if (taDetailModal) {
             const loader = document.getElementById('modal-loader');
@@ -209,7 +252,88 @@
             });
         }
 
-        // Export Link
+        // This block for the Edit Modal and its form submission is correct and complete.
+        const editTAModal = document.getElementById('editTAModal');
+        if (editTAModal) {
+            const editForm = document.getElementById('editTAForm');
+            const judulInput = document.getElementById('edit-judul');
+            const deskripsiInput = document.getElementById('edit-deskripsi');
+            const dosenSelect = document.getElementById('edit-dosen');
+
+            editTAModal.addEventListener('show.bs.modal', async function(event) {
+                event.stopPropagation();
+
+                const button = event.relatedTarget;
+                const url = button.getAttribute('data-edit-url');
+                editForm.action = url;
+
+                document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    judulInput.value = data.judul || '';
+                    deskripsiInput.value = data.deskripsi || '';
+
+                    dosenSelect.innerHTML = '<option value="">--- Pilih Dosen ---</option>';
+                    data.dosens.forEach(dosen => {
+                        const fullName = `${dosen.user__first_name} ${dosen.user__last_name}`.trim();
+                        const option = new Option(fullName, dosen.pk);
+                        dosenSelect.add(option);
+                    });
+
+                    if (data.dosen_pembimbing_id) {
+                        dosenSelect.value = data.dosen_pembimbing_id;
+                    }
+
+                } catch (error) {
+                    console.error("Error fetching TA data for editing:", error);
+                }
+            });
+
+            // MODIFICATION IS HERE
+            editForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(editForm);
+                const url = editForm.action;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // The original logic to update the table row has been replaced
+                        // with this single line to reload the page.
+                        window.location.reload();
+                    } else {
+                        // Error handling remains the same. It will display errors
+                        // in the modal if the submission fails.
+                        for (const field in result.errors) {
+                            const errorDiv = document.getElementById(`error-edit-${field}`);
+                            const fieldInput = document.getElementById(`edit-${field}`);
+                            if (errorDiv && fieldInput) {
+                                fieldInput.classList.add('is-invalid');
+                                errorDiv.textContent = result.errors[field][0];
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error submitting edit form:", error);
+                }
+            });
+        }
+
+        // This section for the Export Link is correct.
         const exportLink = document.getElementById('exportLink');
         if (exportLink) {
             const exportUrl = "{% url 'tugas_akhir:ta-export' %}";
@@ -218,7 +342,7 @@
             exportLink.href = `${exportUrl}?${currentParams.toString()}`;
         }
 
-        // Delete TA Modal
+        // This section for the Delete Modal is correct.
         const deleteTAModal = document.getElementById('deleteTAModal');
         if (deleteTAModal) {
             const deleteForm = document.getElementById('deleteTAForm');

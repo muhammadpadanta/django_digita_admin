@@ -13,6 +13,10 @@ urlpatterns = [
     path('ta/<int:pk>/delete/', views.delete_tugas_akhir_view, name='ta-delete'),
     # URL for exporting Tugas Akhir data
     path('ta/export/', views.TugasAkhirExportView.as_view(), name='ta-export'),
+    # URL for editing a Tugas Akhir
+    path('ta/<int:pk>/edit/', views.edit_tugas_akhir_view, name='ta-edit'),
+    # URL for get ta data for a specific Mahasiswa
+    path('api/get-ta-for-mahasiswa/<int:mahasiswa_id>/', views.get_tugas_akhir_for_mahasiswa, name='api-get-ta-for-mahasiswa'),
 
     # URL for exporting Document data
     path('documents/export/', views.DocumentExportView.as_view(), name='document-export'),

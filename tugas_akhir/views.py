@@ -13,9 +13,9 @@ from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
 
 from digita_admin import settings
-from users.models import Mahasiswa
+from users.models import Mahasiswa, Dosen
 from .models import Dokumen, TugasAkhir
-from .forms import DokumenEditForm, DokumenCreateForm
+from .forms import DokumenEditForm, DokumenCreateForm, TugasAkhirEditForm
 
 
 def document_list_view(request):
@@ -349,3 +349,63 @@ def delete_tugas_akhir_view(request, pk):
         messages.error(request, f"Terjadi kesalahan saat menghapus Tugas Akhir: {e}")
 
     return redirect('tugas_akhir:ta-list')
+
+@login_required
+@login_required
+def edit_tugas_akhir_view(request, pk):
+    """
+    Handles fetching and updating a TugasAkhir instance via AJAX.
+    """
+    tugas_akhir = get_object_or_404(TugasAkhir, pk=pk)
+
+    if request.method == 'POST':
+        form = TugasAkhirEditForm(request.POST, instance=tugas_akhir)
+        if form.is_valid():
+            updated_ta = form.save()
+            dosen_name = "Belum Ditentukan"
+            if updated_ta.dosen_pembimbing:
+                dosen_name = updated_ta.dosen_pembimbing.user.get_full_name()
+
+            return JsonResponse({
+                'success': True,
+                'tugas_akhir': {
+                    'id': updated_ta.pk,
+                    'judul': updated_ta.judul or "-",
+                    'deskripsi': updated_ta.deskripsi,
+                    'dosen_pembimbing_name': dosen_name,
+                }
+            })
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    # Handle GET request
+    else:
+        # CORRECTED LINE: Use 'pk' instead of 'id' for the Dosen model's primary key.
+        dosens = list(Dosen.objects.select_related('user').values('pk', 'user__first_name', 'user__last_name'))
+        data = {
+            'id': tugas_akhir.pk,
+            'judul': tugas_akhir.judul,
+            'deskripsi': tugas_akhir.deskripsi,
+            'dosen_pembimbing_id': tugas_akhir.dosen_pembimbing_id,
+            'dosens': dosens,
+        }
+        return JsonResponse(data)
+
+def get_tugas_akhir_for_mahasiswa(request, mahasiswa_id):
+    """
+    API endpoint to fetch the TugasAkhir for a given Mahasiswa ID.
+    Returns the TugasAkhir's ID and string representation as JSON.
+    """
+    try:
+        tugas_akhir = TugasAkhir.objects.get(mahasiswa_id=mahasiswa_id)
+        data = {
+            'success': True,
+            'tugas_akhir_id': tugas_akhir.pk,
+            'tugas_akhir_str': str(tugas_akhir) # e.g., "TA 12345678 - Judul Skripsi"
+        }
+    except TugasAkhir.DoesNotExist:
+        data = {
+            'success': False,
+            'error': 'Mahasiswa ini belum memiliki data Tugas Akhir.'
+        }
+    return JsonResponse(data)
