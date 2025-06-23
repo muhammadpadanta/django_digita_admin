@@ -66,6 +66,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'core.middleware.AdminSessionTimeoutMiddleware',
 ]
 
 # --- URL Configuration ---
@@ -243,6 +244,19 @@ LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'core:home'
 
 FORM_RENDERER = "django.forms.renderers.DjangoTemplates"
+
+
+# --- SESSION TIMEOUT CONFIGURATION ---
+# The new setting that forces logout when the browser is closed.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Sets the global session expiry to 20 minutes (1200 seconds) for inactivity.
+# This will now primarily affect admins due to our middleware.
+SESSION_COOKIE_AGE = 1200
+
+# Resets the inactivity timer on each request.
+SESSION_SAVE_EVERY_REQUEST = True
+# --- END SESSION TIMEOUT CONFIGURATION ---
 
 # LOGGING = {
 #     'version': 1,
