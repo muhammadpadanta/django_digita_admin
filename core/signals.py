@@ -58,18 +58,6 @@ def log_dokumen_activity(sender, instance, created, **kwargs):
         ActivityLog.objects.create(actor=actor, verb=verb, target=instance, description=description)
 
 
-@receiver(post_save, sender=Pengumuman)
-def log_pengumuman_activity(sender, instance, created, **kwargs):
-    actor = User.objects.filter(is_superuser=True).first()
-    if not actor: return
-    if created:
-        verb = "menambahkan pengumuman baru"
-        description = f"Menambahkan pengumuman: {instance.judul}"
-    else:
-        verb = "memperbarui pengumuman"
-        description = f"Memperbarui pengumuman: {instance.judul}"
-    ActivityLog.objects.create(actor=actor, verb=verb, target=instance, description=description)
-
 
 @receiver(post_delete, sender=Dokumen)
 def log_dokumen_deletion(sender, instance, **kwargs):

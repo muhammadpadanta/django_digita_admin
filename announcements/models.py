@@ -12,7 +12,7 @@ class Pengumuman(models.Model):
     tanggal_mulai = models.DateField(help_text="Tanggal pengumuman mulai ditampilkan")
     tanggal_selesai = models.DateField(help_text="Tanggal pengumuman berakhir")
     lampiran = models.FileField(upload_to='attachments/announcements/', blank=True, null=True, help_text="File lampiran opsional")
-
+    lampiran_hash = models.CharField(max_length=64, blank=True, editable=False)
     # Optional: Track who created the announcement if you have an admin/staff role
     # author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
 

@@ -40,12 +40,13 @@ class AnnouncementCreateView(LoginRequiredMixin, View):
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
 
+
 class AnnouncementUpdateView(LoginRequiredMixin, View):
     """
     Handles fetching data for and updating an announcement via AJAX.
     """
-    # ... The get method remains the same ...
     def get(self, request, pk):
+        # No changes needed here. This is perfectly fine.
         announcement = get_object_or_404(Pengumuman, pk=pk)
         data = {
             'judul': announcement.judul,
@@ -59,13 +60,17 @@ class AnnouncementUpdateView(LoginRequiredMixin, View):
     def post(self, request, pk):
         """Update the announcement."""
         announcement = get_object_or_404(Pengumuman, pk=pk)
-        form = PengumumanForm(request.POST, request.FILES, instance=announcement)
+
+        # --- The only change is on this next line ---
+        form = PengumumanForm(request.POST, request.FILES, instance=announcement, user=request.user)
+
         if form.is_valid():
             saved_announcement = form.save()
             messages.success(request, f"Pengumuman '{saved_announcement.judul}' berhasil diperbarui.")
             return JsonResponse({'status': 'success'})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+
 
 
 class AnnouncementDeleteView(LoginRequiredMixin, View):

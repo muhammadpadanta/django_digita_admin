@@ -3,7 +3,7 @@ from .models import Dokumen
 from django.db import transaction
 from core.models import ActivityLog
 from django.contrib.auth.models import User
-from .utils import calculate_file_hash
+from core.utils import calculate_file_hash
 
 
 class DokumenEditForm(forms.ModelForm):
