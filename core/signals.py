@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from .models import ActivityLog
 from tugas_akhir.models import Dokumen
 from announcements.models import Pengumuman
+from crum import get_current_user
 
 User = get_user_model()
 
@@ -17,10 +18,12 @@ def log_user_creation_activity(sender, instance, created, **kwargs):
     Logs an activity ONLY when a User is CREATED.
     """
     if created:
-        # Use the superuser as the actor, or whoever is logged in.
-        actor = User.objects.filter(is_superuser=True).first()
+        # Get the user who performed the action.
+        actor = get_current_user()
+
+        # Fallback for actions outside a request (e.g., scripts) or self-signup
         if not actor:
-            return
+            actor = instance # A user creating their own account is the actor.
 
         verb = "menambahkan pengguna baru"
         description = f"Menambahkan pengguna baru: {instance.get_full_name()} ({instance.username})"
@@ -33,8 +36,13 @@ def log_user_creation_activity(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=User)
 def log_user_deletion(sender, instance, **kwargs):
-    actor = User.objects.filter(is_superuser=True).first()
-    if not actor: return
+    # Get the user who performed the action (e.g., an admin deleting another user).
+    actor = get_current_user()
+
+    # Fallback to a superuser only if no request user can be found.
+    if not actor:
+        actor = User.objects.filter(is_superuser=True, is_active=True).first()
+        if not actor: return # Exit if no actor can be determined.
     description = f"Menghapus pengguna: {instance.get_full_name()} ({instance.username})"
     ActivityLog.objects.create(
         actor=actor,
@@ -68,7 +76,15 @@ def log_dokumen_deletion(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Pengumuman)
 def log_pengumuman_deletion(sender, instance, **kwargs):
-    actor = User.objects.filter(is_superuser=True).first()
+    # The file deletion logic for orphaned files
+    if instance.lampiran:
+        instance.lampiran.delete(save=False)
+
+    # Get the admin/user who deleted the announcement.
+    actor = get_current_user()
+    if not actor:
+        actor = User.objects.filter(is_superuser=True, is_active=True).first()
+        if not actor: return
+
     description = f"Menghapus pengumuman: {instance.judul}"
-    if actor:
-        ActivityLog.objects.create(actor=actor, verb="menghapus pengumuman", description=description)
+    ActivityLog.objects.create(actor=actor, verb="menghapus pengumuman", description=description)

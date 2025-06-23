@@ -18,3 +18,5 @@ django-simple-history
 boto3
 python-decouple
 django-storages
+django-cleanup
+django-crum

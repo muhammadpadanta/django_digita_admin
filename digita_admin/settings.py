@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'tugas_akhir.apps.TugasAkhirConfig',
     'announcements',
 
+
     # --- Third-Party Apps ---
     'rest_framework',
     'rest_framework_simplejwt',
@@ -39,6 +40,8 @@ INSTALLED_APPS = [
     'django.forms',
     'django_rich',
     'storages',  # For AWS S3 storage backend
+    'django_cleanup.apps.CleanupConfig',
+    'crum',
 
     # --- Django Core Apps Last ---
     "django.contrib.admin",
@@ -47,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
 ]
 
 # --- Middleware Configuration ---
@@ -240,25 +244,25 @@ LOGOUT_REDIRECT_URL = 'core:home'
 
 FORM_RENDERER = "django.forms.renderers.DjangoTemplates"
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'boto3': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'botocore': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'boto3': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#         'botocore': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
 
