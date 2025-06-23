@@ -46,15 +46,16 @@ def log_user_deletion(sender, instance, **kwargs):
 # --- OTHER SIGNALS ---
 
 @receiver(post_save, sender=Dokumen)
-def log_dokumen_activity(sender, instance, created, update_fields, **kwargs):
-    actor = instance.pemilik.user
+def log_dokumen_activity(sender, instance, created, **kwargs):
+    """
+    This signal now ONLY logs the creation of a new document.
+    Updates are handled by DokumenEditForm.
+    """
     if created:
+        actor = instance.pemilik.user
         verb = "mengupload dokumen baru"
-        description = f"Mengupload dokumen: {instance.get_bab_display()}"
-    else:
-        verb = "memperbarui dokumen"
-        description = f"Memperbarui dokumen: {instance.get_bab_display()}" # Simplified for consistency
-    ActivityLog.objects.create(actor=actor, verb=verb, target=instance, description=description)
+        description = f"Mengupload dokumen: {instance.nama_dokumen} ({instance.get_bab_display()})"
+        ActivityLog.objects.create(actor=actor, verb=verb, target=instance, description=description)
 
 
 @receiver(post_save, sender=Pengumuman)

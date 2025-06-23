@@ -100,6 +100,7 @@ class Dokumen(models.Model):
             )
         ]
     )
+    file_hash = models.CharField(max_length=64, blank=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending', help_text="Approval status of the document")
     pemilik = models.ForeignKey(Mahasiswa, on_delete=models.CASCADE, related_name='dokumen_mahasiswa', help_text="The student who owns this document")
     uploaded_at = models.DateTimeField(auto_now_add=True)
