@@ -12,6 +12,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
 
+from digita_admin import settings
 from users.models import Mahasiswa
 from .models import Dokumen, TugasAkhir
 from .forms import DokumenEditForm, DokumenCreateForm
@@ -145,6 +146,7 @@ def create_document_view(request):
     """
     Handles the AJAX form submission for creating a new document.
     """
+    print(f"DEBUG: DEFAULT_FILE_STORAGE is currently '{settings.DEFAULT_FILE_STORAGE}'")
     form = DokumenCreateForm(request.POST, request.FILES)
     if form.is_valid():
         form.save()

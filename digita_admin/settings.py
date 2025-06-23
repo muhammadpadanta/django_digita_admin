@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
+from decouple import config
 
 # --- Core Django Settings ---
 # Defines the base directory of the project.
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django.forms',
     'django_rich',
+    'storages',  # For AWS S3 storage backend
 
     # --- Django Core Apps Last ---
     "django.contrib.admin",
@@ -83,6 +85,22 @@ TEMPLATES = [
         },
     },
 ]
+
+# AWS S3 MEDIA STORAGE CONFIGURATION (FINAL)
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'ap-southeast-2')
+
+# Standard recommended settings for S3
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com' if AWS_STORAGE_BUCKET_NAME else None
+
+# Use S3 for media storage only if a bucket name is provided.
+# Otherwise, Django will fall back to the default local file storage.
+if AWS_STORAGE_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 
 # --- WSGI Application ---
 # The path to the WSGI application object that Django's built-in servers will use.
@@ -221,3 +239,26 @@ LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'core:home'
 
 FORM_RENDERER = "django.forms.renderers.DjangoTemplates"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'boto3': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'botocore': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+

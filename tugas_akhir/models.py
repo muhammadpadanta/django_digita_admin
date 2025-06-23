@@ -5,6 +5,7 @@ from users.models import Mahasiswa, Dosen
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db.models import UniqueConstraint
+from storages.backends.s3boto3 import S3Boto3Storage
 
 def validate_file_size(value):
     """
@@ -89,6 +90,7 @@ class Dokumen(models.Model):
     # MODIFIED: Added validators for file type and size
     file = models.FileField(
         upload_to='dokumen_ta/',
+        storage=S3Boto3Storage(),
         help_text="The uploaded document file",
         validators=[
             validate_file_size,

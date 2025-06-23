@@ -14,3 +14,7 @@ pytest-django
 django-rich
 pytest-rich
 openpyxl
+django-simple-history
+boto3
+python-decouple
+django-storages
