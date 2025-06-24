@@ -8,6 +8,11 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.views import View
 
+import boto3
+from botocore.exceptions import ClientError
+from django.conf import settings
+from django.http import HttpResponseRedirect, HttpResponseNotFound
+
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
@@ -48,6 +53,63 @@ def document_list_view(request):
     }
 
     return render(request, 'core/documents.html', context)
+
+@login_required
+def serve_document_file_view(request, pk):
+    """
+    Generates a pre-signed URL for an S3 object and redirects the user to it.
+    This provides secure, direct-from-S3 access without proxying the file
+    through the Django server.
+    """
+    document = get_object_or_404(Dokumen, pk=pk)
+
+    if not document.file:
+        return HttpResponseNotFound("File does not exist for this document.")
+
+    # Get the S3 client from boto3
+    s3_client = boto3.client(
+        's3',
+        region_name=settings.AWS_S3_REGION_NAME,
+        # The following are only needed if you are not using an IAM role
+        # aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        # aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    object_key = document.file.name
+
+    # Set an expiration time for the URL (e.g., 15 minutes)
+    expiration = 900  # Seconds
+
+    params = {
+        'Bucket': bucket_name,
+        'Key': object_key,
+    }
+
+    # Check if a download is requested
+    action = request.GET.get('action')
+    if action == 'download':
+        # To force download, we override the Content-Disposition header
+        file_name = object_key.split('/')[-1]
+        params['ResponseContentDisposition'] = f'attachment; filename="{file_name}"'
+
+    try:
+        # Generate the pre-signed URL
+        url = s3_client.generate_presigned_url(
+            'get_object',
+            Params=params,
+            ExpiresIn=expiration
+        )
+    except ClientError as e:
+        # Handle potential errors (e.g., file not found on S3, permissions issue)
+        print(f"Error generating pre-signed URL: {e}")
+        messages.error(request, "Could not generate a secure link to the file. Please contact an administrator.")
+        # Redirect back to the document list or an error page
+        return redirect('tugas_akhir:document-list')
+
+    # Redirect the user to the temporary S3 URL
+    return HttpResponseRedirect(url)
+
 
 class DocumentExportView(View):
     """
@@ -120,24 +182,6 @@ class DocumentExportView(View):
         wb.save(response)
 
         return response
-
-@login_required
-def serve_document_file_view(request, pk):
-    """
-    Handles serving a file either for inline viewing or as a forced download.
-    """
-    document = get_object_or_404(Dokumen, pk=pk)
-
-    action = request.GET.get('action')
-
-    if action == 'download':
-        response = HttpResponse(document.file, content_type='application/octet-stream')
-        response['Content-Disposition'] = f'attachment; filename="{document.file.name}"'
-        return response
-    else:
-        # Default to opening in a new tab (inline view)
-        # FileResponse is optimized for this and sets the correct Content-Type
-        return FileResponse(document.file.open('rb'))
 
 # --- VIEW for creating documents ---
 @require_POST
