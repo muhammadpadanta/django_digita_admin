@@ -47,7 +47,7 @@ class PasswordResetRequestView(View):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.POST)
-        success_message = 'If an account with that email exists, a password reset link has been sent.'
+        success_message = 'Jika akun terdaftar dengan email tersebut, Anda akan menerima email berisi tautan untuk mengatur ulang kata sandi Anda.'
 
         if not serializer.is_valid():
             messages.success(request, success_message)
@@ -86,7 +86,7 @@ class PasswordResetRequestView(View):
             email_message.send(fail_silently=False)
 
         except Exception:
-            messages.error(request, "There was an issue sending the email. Please try again later.")
+            messages.error(request, "Terjadi kesalahan saat mengirim email. Silakan coba lagi.")
             return render(request, self.form_template_name, {'form': serializer})
 
         messages.success(request, success_message)
@@ -126,7 +126,7 @@ class PasswordResetConfirmView(View):
             new_password = serializer.validated_data['new_password']
             user.set_password(new_password)
             user.save()
-            messages.success(request, "Your password has been reset successfully. You can now log in.")
+            messages.success(request, "Kata sandi Anda telah berhasil diubah.")
             return redirect(self.success_url_name)
 
         is_token_error = any(key in serializer.errors for key in ['uid', 'token'])
@@ -321,7 +321,7 @@ class UserCreateView(LoginRequiredMixin, View):
         form = UserCreationAdminForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "User has been created successfully.")
+            messages.success(request, "Berhasil membuat user baru.")
             return JsonResponse({'status': 'success'})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
@@ -367,7 +367,7 @@ class UserEditView(LoginRequiredMixin, View):
 
         if form.is_valid():
             saved_user = form.save()
-            messages.success(request, f"User '{saved_user.get_full_name()}' has been updated successfully.")
+            messages.success(request, f"User '{saved_user.get_full_name()}' berhasil diperbarui.")
 
             if hasattr(saved_user, 'mahasiswa_profile'):
                 profile = saved_user.mahasiswa_profile
@@ -378,14 +378,14 @@ class UserEditView(LoginRequiredMixin, View):
                     if tugas_akhir.dosen_pembimbing != new_dosen:
                         tugas_akhir.dosen_pembimbing = new_dosen
                         tugas_akhir.save(update_fields=['dosen_pembimbing'])
-                        messages.info(request, "Advisor for the associated 'Tugas Akhir' has also been updated.")
+                        messages.info(request, "Dosen pembimbing terkait 'Tugas Akhir' juga diperbarui.")
 
                 except TugasAkhir.DoesNotExist:
                     pass
 
             return redirect('users:user_management_list')
 
-        error_message = "Update failed. " + " ".join([f"{field}: {error[0]}" for field, error in form.errors.items()])
+        error_message = "Update gagal. " + " ".join([f"{field}: {error[0]}" for field, error in form.errors.items()])
         messages.error(request, error_message)
         return redirect('users:user_management_list')
 
@@ -399,11 +399,11 @@ class UserDeleteView(LoginRequiredMixin, View):
         try:
             user_to_delete = User.objects.get(pk=user_id)
             if user_to_delete.id == request.user.id:
-                messages.error(request, "You cannot delete your own account.")
+                messages.error(request, "Anda tidak dapat menghapus akun Anda sendiri.")
             else:
                 user_full_name = user_to_delete.get_full_name() or user_to_delete.username
                 user_to_delete.delete()
-                messages.success(request, f"User '{user_full_name}' has been deleted successfully.")
+                messages.success(request, f"User '{user_full_name}' berhasil dihapus.")
         except User.DoesNotExist:
-            messages.error(request, "The user you are trying to delete does not exist.")
+            messages.error(request, "User tidak ditemukan atau sudah dihapus sebelumnya.")
         return redirect('users:user_management_list')

@@ -226,6 +226,7 @@ def edit_document_view(request, pk):
         form = DokumenEditForm(request.POST, request.FILES, instance=document)
         if form.is_valid():
             updated_doc = form.save()
+            messages.success(request, f"Dokumen '{updated_doc.nama_dokumen}' telah berhasil diperbarui.")
             response_data = {
                 'success': True,
                 'document': {

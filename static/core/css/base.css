@@ -120,11 +120,14 @@ body {
 /* === ALERTS / MESSAGES === */
 .messages-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 20px;
+    left: 50%; /* Added */
+    transform: translateX(-50%); /* Added */
     z-index: 1050;
-    width: 100%;
-    max-width: 350px;
+    display: flex; /* Added */
+    gap: 10px; /* Added for spacing between alerts */
+    width: auto; /* Changed from 100% */
+    max-width: 90%; /* Changed from 350px */
 }
 .alert-fade-out {
     opacity: 0;
@@ -133,12 +136,13 @@ body {
 .alert {
     position: relative;
     padding: 1rem 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
     border: 1px solid transparent;
     border-radius: .5rem;
     font-weight: 500;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
+
 .alert:last-child { margin-bottom: 0; }
 .alert.debug { color: #585858; background-color: #f2f2f2; border-color: #e6e6e6; }
 .alert.info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; }
@@ -356,5 +360,24 @@ body {
 }
 
 @media (max-width: 576px) {
-    .messages-container { right: 10px; top: 10px; max-width: 95%; }
+    .messages-container {
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 95%;
+        right: auto;
+        flex-direction: column; /* Stack alerts vertically on small screens */
+        align-items: center; /* Center alerts */
+        gap: 5px;
+    }
+
+    .messages-container .alert {
+        width: 100%;
+        max-width: 350px;
+        margin-bottom: 5px;
+    }
+
+    .messages-container .alert:last-child {
+        margin-bottom: 0;
+    }
 }
