@@ -25,36 +25,11 @@
     align-items: flex-start;
     margin-bottom: 8px;
 }
-
 .announcement-title {
     font-size: 1.3em;
     font-weight: 700;
     color: #343a40;
     margin: 0;
-}
-
-.announcement-actions a {
-    color: #6c757d;
-    margin-left: 8px;
-    font-size: 1.1em;
-    text-decoration: none;
-    border-radius: 50%; /* Make the link area circular */
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.announcement-actions a:hover {
-    color: #0F47AD;
-    background-color: #e9ecef; /* Add a background on hover for better feedback */
-}
-
-.announcement-actions a[title="Delete"]:hover {
-    color: #dc3545;
-    background-color: #f8d7da;
 }
 
 .announcement-period {
@@ -63,9 +38,7 @@
     font-weight: 500;
     margin: 0 0 12px 0;
 }
-.announcement-period i {
-    margin-right: 8px;
-}
+.announcement-period i { margin-right: 8px; }
 
 .announcement-description {
     color: #495057;
@@ -79,12 +52,8 @@
     font-weight: 600;
     font-size: 0.9em;
 }
-.announcement-attachment a:hover {
-    text-decoration: underline;
-}
-.announcement-attachment i {
-    margin-right: 8px;
-}
+.announcement-attachment a:hover { text-decoration: underline; }
+.announcement-attachment i { margin-right: 8px; }
 
 .empty-state-panel {
     background-color: #fff;
@@ -99,101 +68,33 @@
     margin-bottom: 20px;
 }
 
-/* === PAGINATION STYLES === */
-.pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 32px;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.pagination a {
-    color: #0F47AD;
-    text-decoration: none;
-    padding: 10px 18px;
-    margin: 0;
-    border-radius: 8px;
-    transition: background-color 0.2s, color 0.2s;
-    border: 1px solid #dee2e6;
-    font-weight: 600;
-}
-.pagination a:hover {
-    background-color: #f1f3f5;
-    border-color: #ced4da;
-}
-.pagination a.active {
-    background-color: #0F47AD;
-    color: white;
-    border-color: #0F47AD;
-}
-
-
-/* === MEDIA QUERIES FOR RESPONSIVENESS === */
-@media (max-width: 768px) {
-    .page-actions-container .btn {
-        width: 100%; /* Make button full-width on mobile */
-    }
-
-    .announcements-container {
-        gap: 16px; /* Reduce space between cards */
-    }
-
-    .announcement-card {
-        padding: 16px; /* Reduce padding inside cards */
-    }
-
-    .announcement-header {
-        flex-direction: column; /* Stack title and actions vertically */
-        align-items: flex-start;
-        gap: 12px; /* Add space between stacked title and actions */
-    }
-
-    .announcement-title {
-        font-size: 1.15em; /* Slightly reduce title font size */
-    }
-
-    .announcement-actions {
-        margin-left: 0;
-        align-self: flex-end; /* Push actions to the right side of the card */
-    }
-
-    .pagination a {
-        padding: 8px 14px; /* Make pagination buttons smaller */
-        font-size: 0.9em;
-    }
-}
-
-/* Basic styling for error messages and delete button */
-.error-message {
-    color: #dc3545;
-    font-size: 0.875em;
-    margin-top: 0.25rem;
-}
 .delete-btn-icon {
     background: none;
     border: none;
-    color: #dc3545; /* Red color for delete */
+    color: #dc3545;
     cursor: pointer;
     padding: 0;
     font-size: 1em;
 }
-.delete-btn-icon:hover {
-    color: #a71d2a;
-}
-.alert {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid transparent;
-    border-radius: .25rem;
-}
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
+.delete-btn-icon:hover { color: #a71d2a; }
+
+/* === MEDIA QUERIES FOR RESPONSIVENESS === */
+@media (max-width: 768px) {
+    .page-actions-container .btn {
+        width: 100%;
+    }
+    .announcements-container {
+        gap: 16px;
+    }
+    .announcement-card {
+        padding: 16px;
+    }
+    .announcement-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .announcement-title {
+        font-size: 1.15em;
+    }
 }

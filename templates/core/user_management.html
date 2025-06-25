@@ -37,40 +37,41 @@
         </div>
 
         <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                <tr>
-                    <th>NAMA</th>
-                    <th>NIM/NIK</th>
-                    <th>EMAIL</th>
-                    <th>ROLE</th>
-                    <th>STATUS</th> <th>DOSPEM/MAHASISWA</th>
-                    <th>AKSI</th>
-                </tr>
-                </thead>
+            <table class="data-table responsive-table"> <thead>
+            <tr>
+                <th>NAMA</th>
+                <th>NIM/NIK</th>
+                <th>EMAIL</th>
+                <th>ROLE</th>
+                <th>STATUS</th>
+                <th>DOSPEM/MAHASISWA</th>
+                <th>AKSI</th>
+            </tr>
+            </thead>
                 <tbody>
                 {% for user in user_list %}
                 <tr data-role="{{ user.role|lower }}">
-                    <td>
+                    <td data-label="NAMA">
                         <div class="user-info">
                             <span class="user-name">{{ user.full_name }}</span>
                             <span class="user-role">{{ user.details }}</span>
                         </div>
                     </td>
-                    <td>{{ user.identifier }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        <span class="badge {% if user.role == 'Dosen' %}badge-dosen{% else %}badge-mahasiswa{% endif %}">
-                            {{ user.role }}
-                        </span>
+                    <td data-label="NIM/NIK">{{ user.identifier }}</td>
+                    <td data-label="EMAIL">{{ user.email }}</td>
+                    <td data-label="ROLE">
+                    <span class="badge {% if user.role == 'Dosen' %}badge-dosen{% else %}badge-mahasiswa{% endif %}">
+                        {{ user.role }}
+                    </span>
                     </td>
-                    <td> {% if user.is_active %}
+                    <td data-label="STATUS">
+                        {% if user.is_active %}
                         <span class="badge badge-active">Active</span>
                         {% else %}
                         <span class="badge badge-inactive">Inactive</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="DOSPEM/MAHASISWA">
                         {% if user.role == 'Dosen' %}
                         {% if user.mahasiswa_binaan_count > 0 %}
                         <a class="clickable-count" data-bs-toggle="modal" data-bs-target="#studentsModal" data-dosen-id="{{ user.dosen_user_id }}">
@@ -87,9 +88,9 @@
                         {% endif %}
                         {% endif %}
                     </td>
-                    <td class="action-icons">
+                    <td data-label="AKSI" class="action-icons">
                         <a href="#" title="Edit" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user-id="{{ user.id }}"><i class="fas fa-edit"></i></a>
-                        <a href="#" title="Delete" class="text-danger" data-bs-toggle="modal"
+                        <a href="#" title="Delete" data-bs-toggle="modal"
                            data-bs-target="#deleteUserModal"
                            data-user-id="{{ user.id }}"
                            data-user-name="{{ user.full_name }}"> <i class="fas fa-trash-alt"></i>
@@ -98,7 +99,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" style="text-align: center;">No users found.</td>
+                    <td colspan="7" class="empty-state-cell">No users found.</td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -198,8 +199,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" form="editUserForm" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" form="editUserForm" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </div>
     </div>
@@ -335,18 +336,18 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                <h5 class="modal-title" id="deleteUserModalLabel">Konfirmasi Hapus</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the user <strong id="userNameToDelete"></strong>?</p>
-                <p class="text-danger">This action cannot be undone.</p>
+                <p>Apakah Anda yakin ingin menghapus user <strong id="userNameToDelete"></strong>?</p>
+                <p class="text-danger">Tindakan ini tidak dapat diurungkan.</p>
             </div>
             <div class="modal-footer">
                 <form id="deleteUserForm" method="post" action="">
                     {% csrf_token %}
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete User</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
                 </form>
             </div>
         </div>

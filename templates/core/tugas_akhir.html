@@ -28,7 +28,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="data-table responsive-table">
                 <thead>
                 <tr>
                     <th>ID</th>
@@ -41,26 +41,24 @@
                 </thead>
                 <tbody>
                 {% for ta in tugas_akhir_list %}
-                <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#taDetailModal" data-ta-id="{{ ta.pk }}" style="cursor: pointer;">
-                    <td>TA{{ ta.pk|stringformat:"03d" }}</td>
-                    <td>{{ ta.judul|default:"-" }}</td>
-                    <td class="truncate-cell" title="{{ ta.deskripsi }}">{{ ta.deskripsi }}</td>
-                    <td>
-                        {# Safely access the lecturer's name #}
+                <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#taDetailModal" data-ta-id="{{ ta.pk }}">
+                    <td data-label="ID">TA{{ ta.pk|stringformat:"03d" }}</td>
+                    <td data-label="JUDUL">{{ ta.judul|default:"-" }}</td>
+                    <td data-label="DESKRIPSI" class="truncate-cell" title="{{ ta.deskripsi }}">{{ ta.deskripsi }}</td>
+                    <td data-label="DOSEN PEMBIMBING">
                         {{ ta.dosen_pembimbing.user.get_full_name|default:"Belum Ditentukan" }}
                     </td>
-                    <td>
-                        {# Safely access the student's name #}
+                    <td data-label="NAMA MAHASISWA">
                         {{ ta.mahasiswa.user.get_full_name|default:"N/A" }}
                     </td>
-                    <td class="action-icons">
-                        <a href="#" class="text-primary me-2 edit-ta-btn"
+                    <td data-label="AKSI" class="action-icons">
+                        <a href="#" class="me-2 edit-ta-btn"
                            data-bs-toggle="modal"
                            data-bs-target="#editTAModal"
                            data-edit-url="{% url 'tugas_akhir:ta-edit' pk=ta.pk %}"
                            title="Edit TA"><i class="fas fa-edit"></i></a>
 
-                        <a href="#" class="text-danger delete-ta-btn"
+                        <a href="#" class="delete-ta-btn"
                            data-bs-toggle="modal"
                            data-bs-target="#deleteTAModal"
                            data-ta-name="{{ ta.judul|default:'Tanpa Judul' }}"
@@ -70,7 +68,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px;">
+                    <td colspan="6" class="data-table-empty-state empty-state-cell">
                         {% if search_query %}
                         Tidak ada Tugas Akhir yang cocok dengan pencarian Anda.
                         {% else %}
@@ -87,7 +85,7 @@
             {% if tugas_akhir_list.has_previous %}
             <a href="?page={{ tugas_akhir_list.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&laquo;</a>
             {% else %}
-            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&laquo;</span>
+            <span class="page-arrow disabled">&laquo;</span>
             {% endif %}
 
             {% for i in tugas_akhir_list.paginator.page_range %}
@@ -107,7 +105,7 @@
             {% if tugas_akhir_list.has_next %}
             <a href="?page={{ tugas_akhir_list.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="page-arrow">&raquo;</a>
             {% else %}
-            <span class="page-arrow" style="cursor:not-allowed; opacity:0.5;">&raquo;</span>
+            <span class="page-arrow disabled">&raquo;</span>
             {% endif %}
         </nav>
         {% endif %}
@@ -123,7 +121,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="modal-loader" style="text-align: center; padding: 20px;">
+                <div id="modal-loader">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -135,7 +133,7 @@
                     <p><strong>Dosen Pembimbing:</strong> <span id="modal-dosen"></span></p>
                     <hr>
                     <p><strong>Deskripsi:</strong></p>
-                    <p id="modal-deskripsi" style="white-space: pre-wrap;"></p>
+                    <p id="modal-deskripsi"></p>
                     <hr>
                     <small class="text-muted">Dibuat pada: <span id="modal-created-at"></span></small>
                 </div>

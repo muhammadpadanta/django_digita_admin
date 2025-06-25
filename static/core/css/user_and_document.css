@@ -1,11 +1,4 @@
-/* === USER MANAGEMENT PAGE STYLES === */
-
-.main-panel {
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-    overflow: hidden; /* Ensures child elements conform to border radius */
-}
+/* === USER & DOCUMENT MANAGEMENT PAGE STYLES === */
 
 /* Tab Navigation */
 .tabs-nav {
@@ -31,82 +24,7 @@
     border-bottom-color: #0F47AD;
 }
 
-/* Action Bar */
-.action-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-}
-.search-wrapper {
-    position: relative;
-    flex-grow: 1;
-    max-width: 350px;
-}
-.search-wrapper .fa-search {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #adb5bd;
-}
-.search-wrapper input {
-    width: 100%;
-    padding: 10px 15px 10px 40px;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    font-size: 0.9em;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-.search-wrapper input:focus {
-    border-color: #0F47AD;
-    box-shadow: 0 0 0 3px rgba(15, 71, 173, 0.2);
-    outline: none;
-}
-.buttons-wrapper {
-    display: flex; /* This will align the buttons horizontally */
-    gap: 10px; /* This adds space between the buttons */
-}
-.buttons-wrapper .btn i {
-    margin-right: 6px;
-}
-
-/* Secondary Button Style */
-.btn-secondary {
-    background-color: #f8f9fa;
-    color: #343a40;
-    border: 1px solid #ced4da;
-    box-shadow: none;
-}
-.btn-secondary:hover {
-    background-color: #e9ecef;
-}
-
-/* Data Table */
-.table-responsive {
-    overflow-x: auto;
-    padding: 0 24px; /* Add padding to contain the table */
-}
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-.data-table th, .data-table td {
-    padding: 16px 0; /* Adjust padding */
-    border-bottom: 1px solid #e9ecef;
-    vertical-align: middle;
-}
-.data-table th:first-child, .data-table td:first-child {
-    padding-left: 0;
-}
-.data-table th:last-child, .data-table td:last-child {
-    padding-right: 0;
-    text-align: right;
-}
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
+/* User Info in Table */
 .user-info .user-name {
     font-weight: 600;
     color: #343a40;
@@ -116,50 +34,8 @@
     font-size: 0.9em;
     color: #6c757d;
 }
-.action-icons a {
-    color: #6c757d;
-    margin: 0 8px;
-    font-size: 1.1em;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-.action-icons a:hover {
-    color: #0F47AD;
-}
-.action-icons a[title="Delete"]:hover {
-    color: #dc3545;
-}
 
-/* Pagination */
-.pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 24px;
-}
-.pagination a {
-    text-decoration: none;
-    color: #495057;
-    padding: 8px 14px;
-    margin: 0 3px;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-.pagination a:hover {
-    background-color: #f1f3f5;
-    border-color: #ced4da;
-}
-.pagination a.active {
-    background-color: #0F47AD;
-    border-color: #0F47AD;
-    color: #fff;
-    font-weight: 600;
-}
-.pagination a.page-arrow {
-    font-weight: bold;
-}
-
+/* Role/Status Badges */
 span.badge.badge-dosen{
     background-color: #e9ecef;
     color: #495057;
@@ -167,7 +43,6 @@ span.badge.badge-dosen{
     border-radius: 12px;
     font-size: 0.85em;
 }
-
 span.badge.badge-mahasiswa{
     background-color: #f8d7da;
     color: #721c24;
@@ -176,8 +51,7 @@ span.badge.badge-mahasiswa{
     font-size: 0.85em;
 }
 
-/* === DOCUMENTS PAGE STYLES / status-badge === */
-
+/* Document Status Badges */
 .status-badge {
     display: inline-block;
     padding: 5px 12px;
@@ -186,54 +60,15 @@ span.badge.badge-mahasiswa{
     font-weight: 600;
     letter-spacing: 0.5px;
 }
+.status-badge.status-pending { background-color: #fff3cd; color: #856404; }
+.status-badge.status-disetujui { background-color: #d4edda; color: #155724; }
+.status-badge.status-revisi { background-color: #f8d7da; color: #721c24; }
 
-.status-badge.status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.status-badge.status-disetujui {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.status-badge.status-revisi {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
+/* Active/Inactive Badges */
 .badge-active { background-color: #28a745; color: white; }
 .badge-inactive { background-color: #6c757d; color: white; }
-.action-icons .btn-link {
-    color: #495057;
-    text-decoration: none;
-}
-.action-icons .btn-link:hover {
-    color: #0056b3;
-}
 
-.hidden {
-    display: none;
-}
-.clickable-count {
-    cursor: pointer;
-    color: #0d6efd;
-    text-decoration: underline;
-}
-.clickable-count:hover {
-    color: #0a58ca;
-}
 
-/* Simple pagination styling */
-.pagination-nav .page-item.disabled .page-link {
-    color: #6c757d;
-    pointer-events: none;
-    background-color: #fff;
-    border-color: #dee2e6;
-}
-.pagination-nav .page-link {
-    cursor: pointer;
-}
 /* Enhanced Role Selection Styling */
 .role-selection-container {
     display: flex;
@@ -241,11 +76,9 @@ span.badge.badge-mahasiswa{
     justify-content: center;
     margin-top: 1rem;
 }
-
 .role-option .form-check-input {
     display: none; /* Hide the default radio button */
 }
-
 .role-option .form-check-label {
     display: flex;
     flex-direction: column;
@@ -259,67 +92,18 @@ span.badge.badge-mahasiswa{
     transition: all 0.2s ease-in-out;
     font-weight: 500;
 }
-
 .role-option .form-check-label:hover {
     border-color: #0d6efd;
     color: #0d6efd;
 }
-
 .role-option .form-check-input:checked + .form-check-label {
     background-color: #e7f1ff;
     border-color: #0d6efd;
     color: #0a58ca;
     font-weight: 600;
 }
-
 .role-option .role-icon {
     font-size: 2.5rem;
     margin-bottom: 10px;
 }
-
-.form-select {
-    display: block;
-    width: 100%;
-    padding: .375rem 2.25rem .375rem .75rem;
-    -moz-padding-start: calc(0.75rem - 3px);
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #495057;
-    background-color: #fff;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right .75rem center;
-    background-size: 16px 12px;
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-.form-select:focus {
-    border-color: #86b7fe;
-    outline: 0;
-    box-shadow: 0 0 0 .25rem rgba(13,110,253,.25);
-}
-.form-select.is-invalid {
-    border-color: #dc3545;
-}
-.hidden {
-    display: none !important;
-}
-.invalid-feedback {
-    display: none;
-    width: 100%;
-    margin-top: .25rem;
-    font-size: .875em;
-    color: #dc3545;
-}
-.is-invalid ~ .invalid-feedback {
-    display: block;
-}
-
-
-/* document modal */
 

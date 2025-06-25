@@ -8,6 +8,8 @@
   <header class="dashboard-header">
     <h1>Pengumuman</h1>
     <div class="header-actions">
+      <button title="Profile Settings"><i class="fas fa-user-circle"></i></button>
+      <button title="General Settings"><i class="fas fa-cog"></i></button>
     </div>
   </header>
 
@@ -23,7 +25,7 @@
     <div class="announcement-card">
       <div class="announcement-header">
         <h3 class="announcement-title">{{ ann.judul }}</h3>
-        <div class="announcement-actions">
+        <div class="action-icons">
           {# Edit button with data attributes for JavaScript #}
           <a href="#" class="edit-btn" data-id="{{ ann.id }}" title="Edit"><i class="fas fa-edit"></i></a>
 
