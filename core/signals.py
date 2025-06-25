@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 
 from .models import ActivityLog
-from tugas_akhir.models import Dokumen
+from tugas_akhir.models import Dokumen, TugasAkhir
 from announcements.models import Pengumuman
 from crum import get_current_user
 
@@ -88,3 +88,48 @@ def log_pengumuman_deletion(sender, instance, **kwargs):
 
     description = f"Menghapus pengumuman: {instance.judul}"
     ActivityLog.objects.create(actor=actor, verb="menghapus pengumuman", description=description)
+
+@receiver(post_save, sender=TugasAkhir)
+def log_tugas_akhir_creation_activity(sender, instance, created, **kwargs):
+    """
+    Logs an activity ONLY when a TugasAkhir is CREATED.
+    Updates should be handled in the form for more detail.
+    """
+    if created:
+        actor = get_current_user()
+        if not actor:
+            # Fallback to a superuser if the actor isn't in the request context
+            actor = User.objects.filter(is_superuser=True, is_active=True).first()
+            if not actor: return
+
+        verb = "membuat tugas akhir"
+        mahasiswa_name = instance.mahasiswa.user.get_full_name() if instance.mahasiswa else "N/A"
+        description = f"Membuat Tugas Akhir baru '{instance.judul}' untuk mahasiswa {mahasiswa_name}"
+
+        ActivityLog.objects.create(
+            actor=actor,
+            verb=verb,
+            target=instance,
+            description=description
+        )
+
+@receiver(post_delete, sender=TugasAkhir)
+def log_tugas_akhir_deletion_activity(sender, instance, **kwargs):
+    """
+    Logs an activity when a TugasAkhir is DELETED.
+    """
+    actor = get_current_user()
+    if not actor:
+        actor = User.objects.filter(is_superuser=True, is_active=True).first()
+        if not actor: return
+
+    verb = "menghapus tugas akhir"
+    mahasiswa_name = instance.mahasiswa.user.get_full_name() if instance.mahasiswa else "N/A"
+    description = f"Menghapus Tugas Akhir '{instance.judul}' milik {mahasiswa_name}"
+
+    ActivityLog.objects.create(
+        actor=actor,
+        verb=verb,
+        # The target object is now gone, so we only save the description
+        description=description
+    )

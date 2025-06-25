@@ -5,6 +5,7 @@ from core.models import ActivityLog
 from django.contrib.auth.models import User
 from core.utils import calculate_file_hash
 from .models import Dokumen, TugasAkhir, Dosen
+from crum import get_current_user
 
 
 class DokumenEditForm(forms.ModelForm):
@@ -166,13 +167,55 @@ class TugasAkhirEditForm(forms.ModelForm):
     @transaction.atomic
     def save(self, commit=True):
         """
-        Overrides the default save method to also update the `dosen_pembimbing`
-        on the related Mahasiswa instance, ensuring data consistency.
+        Overrides the default save method to:
+        1. Log detailed changes to the ActivityLog.
+        2. Update the `dosen_pembimbing` on the related Mahasiswa instance.
         """
+        # Get the state of the object BEFORE changes
+        old_instance = TugasAkhir.objects.get(pk=self.instance.pk)
+        old_details = {
+            'Judul': old_instance.judul,
+            'Deskripsi': old_instance.deskripsi,
+            'Dosen Pembimbing': old_instance.dosen_pembimbing.user.get_full_name() if old_instance.dosen_pembimbing else "Belum Ditentukan"
+        }
+
+        # Get the new instance from the form, but don't save to DB yet
         updated_ta = super().save(commit=False)
 
-        mahasiswa = updated_ta.mahasiswa
+        # --- MODIFICATION START ---
+        # Compare old and new values to build a change description
+        changes = []
+        new_dosen_name = updated_ta.dosen_pembimbing.user.get_full_name() if updated_ta.dosen_pembimbing else "Belum Ditentukan"
 
+        if old_details['Judul'] != updated_ta.judul:
+            changes.append(f"Judul: '{old_details['Judul']}' -> '{updated_ta.judul}'")
+
+        if old_details['Deskripsi'] != updated_ta.deskripsi:
+            changes.append("Deskripsi diperbarui.")
+
+        if old_details['Dosen Pembimbing'] != new_dosen_name:
+            changes.append(f"Dosen Pembimbing: '{old_details['Dosen Pembimbing']}' -> '{new_dosen_name}'")
+
+        # If there were changes, create a log entry
+        if changes:
+            actor = get_current_user()
+            # Add a fallback if the current user isn't found
+            if not actor:
+                actor = User.objects.filter(is_superuser=True, is_active=True).first()
+
+            if actor: # This check will now be more reliable
+                description = (
+                    f"Memperbarui Tugas Akhir '{updated_ta.judul}' milik "
+                    f"{updated_ta.mahasiswa.user.get_full_name()}: {'; '.join(changes)}"
+                )
+                ActivityLog.objects.create(
+                    actor=actor,
+                    verb="memperbarui tugas akhir",
+                    target=updated_ta,
+                    description=description
+                )
+
+        mahasiswa = updated_ta.mahasiswa
         new_advisor = updated_ta.dosen_pembimbing
 
         if mahasiswa.dosen_pembimbing != new_advisor:
@@ -180,6 +223,7 @@ class TugasAkhirEditForm(forms.ModelForm):
             if commit:
                 mahasiswa.save()
 
+        # Commit all changes to the database
         if commit:
             updated_ta.save()
             self.save_m2m()

@@ -411,6 +411,8 @@ def edit_tugas_akhir_view(request, pk):
             if updated_ta.dosen_pembimbing:
                 dosen_name = updated_ta.dosen_pembimbing.user.get_full_name()
 
+            messages.success(request, f"Tugas Akhir '{updated_ta.judul}' telah berhasil diperbarui.")
+
             return JsonResponse({
                 'success': True,
                 'tugas_akhir': {
@@ -425,7 +427,6 @@ def edit_tugas_akhir_view(request, pk):
 
     # Handle GET request
     else:
-        # CORRECTED LINE: Use 'pk' instead of 'id' for the Dosen model's primary key.
         dosens = list(Dosen.objects.select_related('user').values('pk', 'user__first_name', 'user__last_name'))
         data = {
             'id': tugas_akhir.pk,
