@@ -43,7 +43,7 @@
       </a>
       <a href="{% url 'users:user_management_list' %}" class="{% if request.resolver_match.view_name == 'users:user_management_list' %}active{% endif %}">
         <i class="fas fa-users nav-icon"></i>
-        <span>User Management</span>
+        <span>Manajemen User</span>
       </a>
       <a href="{% url 'tugas_akhir:ta-list' %}" class="{% if request.resolver_match.url_name == 'ta-list' %}active{% endif %}">
         <i class="fas fa-book-reader nav-icon"></i>
@@ -51,7 +51,7 @@
       </a>
       <a href="{% url 'tugas_akhir:document-list' %}" class="{% if request.resolver_match.url_name == 'document-list' %}active{% endif %}">
         <i class="fas fa-file-alt nav-icon"></i>
-        <span>Documents</span>
+        <span>Dokumen</span>
       </a>
       <a href="{% url 'announcements:list' %}" class="{% if 'announcements' in request.resolver_match.app_names %}active{% endif %}">
         <i class="fas fa-bullhorn nav-icon"></i>
@@ -61,7 +61,7 @@
       <p class="nav-section-title">Other</p>
       <a href="#">
         <i class="fas fa-chart-bar nav-icon"></i>
-        <span>Report</span>
+        <span>Logs</span>
       </a>
 
       {% if user.is_authenticated %}
