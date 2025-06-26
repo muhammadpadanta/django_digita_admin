@@ -1,22 +1,45 @@
 # tugas_akhir/api_views.py
-
+import boto3
+from botocore.exceptions import ClientError
 from django.db import transaction
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework import serializers
+from django.conf import settings
 
-from .models import Dokumen, RequestDosen, TugasAkhir
+from .models import Dokumen, RequestDosen, TugasAkhir, Mahasiswa
 from .permissions import (
     IsDokumenOwner, IsDosen, IsMahasiswa, IsMahasiswaOrDosen,
     IsOwnerOrRecipient, IsOwnerOrSupervisingDosen,
     IsRequestRecipientOrAdmin, IsSupervisingDosen
 )
 from .serializers import (
-    DokumenSerializer, RequestDosenCreateSerializer,
-    RequestDosenListSerializer, RequestDosenRespondSerializer
+    DokumenSerializer, DokumenStatusUpdateSerializer, RequestDosenCreateSerializer,
+    RequestDosenListSerializer, RequestDosenRespondSerializer, SupervisedMahasiswaSerializer
 )
 
+# --- NEW: View to list supervised students ---
+class SupervisedStudentsListView(generics.ListAPIView):
+    """
+    API endpoint for a logged-in Dosen to view a list of all
+    Mahasiswa they are supervising.
+    """
+    serializer_class = SupervisedMahasiswaSerializer
+    permission_classes = [permissions.IsAuthenticated, IsDosen]
+
+    def get_queryset(self):
+        """
+        Returns a queryset of Mahasiswa who are being supervised by the
+        currently authenticated Dosen.
+        """
+        user = self.request.user
+        # The related_name on the Dosen model for the supervisor link is 'mahasiswa_bimbingan'
+        # which points to the TugasAkhir model. We can then traverse back to the Mahasiswa.
+        return Mahasiswa.objects.filter(
+            tugas_akhir__dosen_pembimbing=user.dosen_profile
+        ).select_related('user', 'program_studi', 'tugas_akhir').order_by('user__first_name')
 
 class SupervisionRequestListCreateView(generics.ListCreateAPIView):
     """
@@ -100,15 +123,44 @@ class DokumenViewSet(viewsets.ModelViewSet):
     serializer_class = DokumenSerializer
 
     def get_queryset(self):
+        """
+        Dynamically filters the queryset based on the user's role.
+        - Mahasiswa can see their own documents.
+        - Dosen can see documents of the students they supervise.
+        """
         user = self.request.user
+        queryset = Dokumen.objects.none() # Start with an empty queryset
+
         if hasattr(user, 'mahasiswa_profile'):
-            return Dokumen.objects.filter(pemilik=user.mahasiswa_profile).select_related('pemilik__user', 'tugas_akhir')
+            # Mahasiswa can only see their own documents
+            queryset = Dokumen.objects.filter(pemilik=user.mahasiswa_profile)
+
         elif hasattr(user, 'dosen_profile'):
-            return Dokumen.objects.filter(tugas_akhir__dosen_pembimbing=user.dosen_profile).select_related('pemilik__user', 'tugas_akhir')
-        return Dokumen.objects.none()
+            # Dosen can see documents of students they supervise.
+            # Check for the filter first.
+            mahasiswa_id = self.request.query_params.get('mahasiswa_id')
+            if mahasiswa_id:
+                # If filtered, only show documents for that specific student,
+                # but ensure the Dosen is actually their supervisor.
+                queryset = Dokumen.objects.filter(
+                    pemilik_id=mahasiswa_id,
+                    tugas_akhir__dosen_pembimbing=user.dosen_profile
+                )
+            else:
+                # If not filtered, show all documents from all supervised students.
+                queryset = Dokumen.objects.filter(
+                    tugas_akhir__dosen_pembimbing=user.dosen_profile
+                )
+
+        return queryset.select_related('pemilik__user', 'tugas_akhir').order_by('bab')
 
     def get_permissions(self):
-        if self.action == 'status_checklist':
+        """Assigns permissions based on the requested action."""
+        if self.action == 'update_status':
+            self.permission_classes = [permissions.IsAuthenticated, IsSupervisingDosen]
+        elif self.action == 'access_file':
+            self.permission_classes = [permissions.IsAuthenticated, IsOwnerOrSupervisingDosen]
+        elif self.action == 'status_checklist':
             self.permission_classes = [permissions.IsAuthenticated, IsMahasiswa]
         elif self.action == 'create':
             self.permission_classes = [permissions.IsAuthenticated, IsMahasiswa]
@@ -116,22 +168,83 @@ class DokumenViewSet(viewsets.ModelViewSet):
             self.permission_classes = [permissions.IsAuthenticated, IsDokumenOwner]
         elif self.action == 'retrieve':
             self.permission_classes = [permissions.IsAuthenticated, IsOwnerOrSupervisingDosen]
-        elif self.action == 'update_status':
-            self.permission_classes = [permissions.IsAuthenticated, IsSupervisingDosen]
-        else:
+        else: # Covers the 'list' action
             self.permission_classes = [permissions.IsAuthenticated, IsMahasiswaOrDosen]
         return super().get_permissions()
+
+    def perform_create(self, serializer):
+        """
+        Saves the new document instance. The serializer's `create` method
+        handles assigning the owner and related 'TugasAkhir' instance.
+        """
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        """Overrides the default destroy method to return a success message."""
+        instance = self.get_object()
+        document_name = instance.nama_dokumen
+        self.perform_destroy(instance)
+        return Response(
+            {"message": f"Dokumen '{document_name}' telah berhasil dihapus."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['patch'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """
+        Custom action for a Dosen to update a document's status.
+        Requires 'catatan_revisi' if the status is set to 'Revisi'.
+        """
+        dokumen = self.get_object()
+        serializer = DokumenStatusUpdateSerializer(dokumen, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            # Return the full, updated document data using the main serializer
+            return Response(DokumenSerializer(dokumen, context={'request': request}).data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path='access-file')
+    def access_file(self, request, pk=None):
+        """
+        Generates a temporary, secure pre-signed URL for an S3 file.
+        The client can then use this URL to view or download the file directly from S3.
+        Accepts a '?action=download' query parameter to force download.
+        """
+        document = self.get_object()
+
+        if not document.file:
+            return Response({"error": "File tidak ditemukan untuk dokumen ini."}, status=status.HTTP_404_NOT_FOUND)
+
+        s3_client = boto3.client('s3', region_name=settings.AWS_S3_REGION_NAME)
+        params = {
+            'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+            'Key': document.file.name,
+        }
+
+        if request.query_params.get('action') == 'download':
+            file_name = document.file.name.split('/')[-1]
+            params['ResponseContentDisposition'] = f'attachment; filename="{file_name}"'
+
+        try:
+            url = s3_client.generate_presigned_url('get_object', Params=params, ExpiresIn=900)
+            return Response({'url': url})
+        except ClientError as e:
+            print(f"Error generating pre-signed URL: {e}")
+            return Response({"error": "Tidak dapat membuat link aman untuk file tersebut."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], url_path='status-checklist')
     def status_checklist(self, request):
         """
-        Provides a complete checklist of all required thesis chapters (BAB)
-        and the status of each for the currently logged-in student.
+        Provides a checklist of all required chapters and their upload status for the
+        requesting Mahasiswa.
         """
         mahasiswa = request.user.mahasiswa_profile
         uploaded_docs = {doc.bab: doc for doc in Dokumen.objects.filter(pemilik=mahasiswa)}
         all_babs = Dokumen.BAB_CHOICES
         checklist_data = []
+
         for bab_code, bab_display_name in all_babs:
             if bab_code in uploaded_docs:
                 document = uploaded_docs[bab_code]
@@ -148,19 +261,3 @@ class DokumenViewSet(viewsets.ModelViewSet):
                     'document_details': None
                 })
         return Response(checklist_data)
-
-    def perform_create(self, serializer):
-        """Passes the request context to the serializer to set the owner."""
-        serializer.save(context={'request': self.request})
-
-    @action(detail=True, methods=['patch'], url_path='update-status')
-    def update_status(self, request, pk=None):
-        """Custom action for a Dosen to update a document's status."""
-        dokumen = self.get_object()
-        new_status = request.data.get('status')
-        if new_status not in [choice[0] for choice in Dokumen.STATUS_CHOICES]:
-            return Response({'error': 'Status yang diberikan tidak valid.'}, status=status.HTTP_400_BAD_REQUEST)
-        dokumen.status = new_status
-        dokumen.save(update_fields=['status'])
-        serializer = self.get_serializer(dokumen)
-        return Response(serializer.data)

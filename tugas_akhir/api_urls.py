@@ -8,6 +8,9 @@ router = DefaultRouter()
 router.register(r'dokumen', api_views.DokumenViewSet, basename='dokumen-api')
 
 urlpatterns = [
+    # --- Dosen-specific endpoints ---
+    path('dosen/supervised-students/', api_views.SupervisedStudentsListView.as_view(), name='dosen-supervised-students'),
+
     # URL for supervision requests API
     path('supervision-requests/', api_views.SupervisionRequestListCreateView.as_view(), name='supervision-request-list-create'),
     path('supervision-requests/<int:pk>/', api_views.SupervisionRequestDetailUpdateView.as_view(), name='supervision-request-detail-update'),
