@@ -4,6 +4,14 @@ from datetime import timedelta
 import dj_database_url
 from decouple import config
 
+# --- Environment Variable Loading ---
+# Attempts to load environment variables from a .env file for local development.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # --- Core Django Settings ---
 # Defines the base directory of the project.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -218,14 +226,6 @@ AUTHENTICATION_BACKENDS = [
     'users.backends.NimNikAuthBackend', # Custom backend
     'django.contrib.auth.backends.ModelBackend', # Default Django backend
 ]
-
-# --- Environment Variable Loading ---
-# Attempts to load environment variables from a .env file for local development.
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
 
 # --- Email Settings ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
