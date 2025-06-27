@@ -105,3 +105,43 @@ class IsOwnerOrSupervisingDosen(permissions.BasePermission):
             is_supervisor = (obj.tugas_akhir.dosen_pembimbing == request.user.dosen_profile)
 
         return is_owner or is_supervisor
+
+class IsJadwalOwner(permissions.BasePermission):
+    """
+    Permission to only allow the owner (Mahasiswa) of a schedule to see it.
+    """
+    message = "Anda bukan pemilik jadwal bimbingan ini."
+
+    def has_object_permission(self, request, view, obj):
+        if not hasattr(request.user, 'mahasiswa_profile'):
+            return False
+        return obj.mahasiswa == request.user.mahasiswa_profile
+
+class IsJadwalDosen(permissions.BasePermission):
+    """
+    Permission to only allow the assigned Dosen to interact with a schedule.
+    """
+    message = "Anda bukan dosen pembimbing untuk jadwal ini."
+
+    def has_object_permission(self, request, view, obj):
+        if not hasattr(request.user, 'dosen_profile'):
+            return False
+        return obj.dosen_pembimbing == request.user.dosen_profile
+
+class IsJadwalOwnerOrDosen(permissions.BasePermission):
+    """
+    Allows access to a schedule if the user is the owner (Mahasiswa) or the assigned Dosen.
+    Used primarily for read access.
+    """
+    message = "Anda tidak memiliki izin untuk melihat jadwal bimbingan ini."
+
+    def has_object_permission(self, request, view, obj):
+        is_owner = False
+        if hasattr(request.user, 'mahasiswa_profile'):
+            is_owner = (obj.mahasiswa == request.user.mahasiswa_profile)
+
+        is_dosen = False
+        if hasattr(request.user, 'dosen_profile'):
+            is_dosen = (obj.dosen_pembimbing == request.user.dosen_profile)
+
+        return is_owner or is_dosen

@@ -9,18 +9,21 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from django.conf import settings
 
-from .models import Dokumen, RequestDosen, TugasAkhir, Mahasiswa
+from .models import Dokumen, RequestDosen, TugasAkhir, Mahasiswa, JadwalBimbingan, Ruangan
 from .permissions import (
     IsDokumenOwner, IsDosen, IsMahasiswa, IsMahasiswaOrDosen,
     IsOwnerOrRecipient, IsOwnerOrSupervisingDosen,
-    IsRequestRecipientOrAdmin, IsSupervisingDosen
+    IsRequestRecipientOrAdmin, IsSupervisingDosen,
+    IsJadwalOwner, IsJadwalDosen, IsJadwalOwnerOrDosen
 )
 from .serializers import (
     DokumenSerializer, DokumenStatusUpdateSerializer, RequestDosenCreateSerializer,
-    RequestDosenListSerializer, RequestDosenRespondSerializer, SupervisedMahasiswaSerializer
+    RequestDosenListSerializer, RequestDosenRespondSerializer, SupervisedMahasiswaSerializer,
+    JadwalBimbinganCreateSerializer, JadwalBimbinganListSerializer, JadwalBimbinganDosenResponseSerializer,
+    JadwalBimbinganDosenCompleteSerializer, RuanganSerializer
 )
 
-# --- NEW: View to list supervised students ---
+# --- View to list supervised students ---
 class SupervisedStudentsListView(generics.ListAPIView):
     """
     API endpoint for a logged-in Dosen to view a list of all
@@ -35,8 +38,6 @@ class SupervisedStudentsListView(generics.ListAPIView):
         currently authenticated Dosen.
         """
         user = self.request.user
-        # The related_name on the Dosen model for the supervisor link is 'mahasiswa_bimbingan'
-        # which points to the TugasAkhir model. We can then traverse back to the Mahasiswa.
         return Mahasiswa.objects.filter(
             tugas_akhir__dosen_pembimbing=user.dosen_profile
         ).select_related('user', 'program_studi', 'tugas_akhir').order_by('user__first_name')
@@ -261,3 +262,72 @@ class DokumenViewSet(viewsets.ModelViewSet):
                     'document_details': None
                 })
         return Response(checklist_data)
+
+class JadwalBimbinganViewSet(viewsets.ModelViewSet):
+    """
+    Manages guidance schedule (Jadwal Bimbingan) for students and lecturers.
+    """
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
+
+    def get_queryset(self):
+        """
+        - Mahasiswa sees their own schedule requests.
+        - Dosen sees incoming schedule requests from their students.
+        """
+        user = self.request.user
+        if hasattr(user, 'mahasiswa_profile'):
+            return JadwalBimbingan.objects.filter(mahasiswa=user.mahasiswa_profile).select_related('mahasiswa__user', 'dosen_pembimbing__user', 'lokasi_ruangan')
+        if hasattr(user, 'dosen_profile'):
+            return JadwalBimbingan.objects.filter(dosen_pembimbing=user.dosen_profile).select_related('mahasiswa__user', 'dosen_pembimbing__user', 'lokasi_ruangan')
+        return JadwalBimbingan.objects.none()
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action and user role."""
+        if self.action == 'create':
+            return JadwalBimbinganCreateSerializer
+        if self.action == 'respond':
+            return JadwalBimbinganDosenResponseSerializer
+        if self.action == 'complete':
+            return JadwalBimbinganDosenCompleteSerializer
+        return JadwalBimbinganListSerializer # For list and retrieve
+
+    def get_permissions(self):
+        """Assign permissions based on the action."""
+        if self.action == 'create':
+            self.permission_classes = [permissions.IsAuthenticated, IsMahasiswa]
+        elif self.action == 'respond' or self.action == 'complete':
+            self.permission_classes = [permissions.IsAuthenticated, IsJadwalDosen]
+        elif self.action in ['retrieve', 'update', 'partial_update']:
+            self.permission_classes = [permissions.IsAuthenticated, IsJadwalOwnerOrDosen]
+        else: # list
+            self.permission_classes = [permissions.IsAuthenticated, IsMahasiswaOrDosen]
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    @action(detail=True, methods=['patch'], url_path='respond')
+    def respond(self, request, pk=None):
+        """
+        Custom action for a Dosen to accept or reject a guidance request.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        # The save method returns the updated instance
+        updated_instance = serializer.save()
+        # Serialize the UPDATED instance for the response
+        return Response(JadwalBimbinganListSerializer(updated_instance).data)
+
+    @action(detail=True, methods=['patch'], url_path='complete')
+    def complete(self, request, pk=None):
+        """
+        Custom action for a Dosen to mark a session as 'DONE' and add notes.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        # The save method returns the updated instance
+        updated_instance = serializer.save()
+        # Serialize the UPDATED instance for the response
+        return Response(JadwalBimbinganListSerializer(updated_instance).data)

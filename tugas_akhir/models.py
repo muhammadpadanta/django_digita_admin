@@ -16,6 +16,55 @@ def validate_file_size(value):
         raise ValidationError("Ukuran file maksimal adalah 2MB.")
     return value
 
+# --- Model Ruangan ---
+class Ruangan(models.Model):
+    """
+    Represents a physical room or location for meetings.
+    """
+    nama_ruangan = models.CharField(max_length=100, unique=True)
+    gedung = models.CharField(max_length=100, blank=True, null=True)
+    keterangan = models.TextField(blank=True, null=True, help_text="Informasi tambahan seperti kapasitas atau fasilitas.")
+
+    def __str__(self):
+        return f"{self.nama_ruangan}{f' ({self.gedung})' if self.gedung else ''}"
+
+    class Meta:
+        verbose_name_plural = "Ruangan"
+        ordering = ['nama_ruangan']
+
+# --- Model JadwalBimbingan ---
+class JadwalBimbingan(models.Model):
+    """
+    Represents a guidance session request from a student to their supervisor.
+    """
+    STATUS_CHOICES = [
+        ('PENDING', 'Menunggu Persetujuan'),
+        ('ACCEPTED', 'Disetujui'),
+        ('REJECTED', 'Ditolak'),
+        ('DONE', 'Selesai'),
+    ]
+
+    mahasiswa = models.ForeignKey(Mahasiswa, on_delete=models.CASCADE, related_name='jadwal_bimbingan')
+    dosen_pembimbing = models.ForeignKey(Dosen, on_delete=models.CASCADE, related_name='jadwal_bimbingan_dosen')
+    judul_bimbingan = models.CharField(max_length=255, help_text="Topik atau judul yang akan dibahas.")
+    tanggal = models.DateField()
+    waktu = models.TimeField()
+    lokasi_text = models.CharField(max_length=255, help_text="e.g., 'Online via Google Meet' atau nama ruangan jika tidak ada di daftar.")
+    lokasi_ruangan = models.ForeignKey(Ruangan, on_delete=models.SET_NULL, null=True, blank=True, help_text="Pilih ruangan jika bimbingan tatap muka.")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', db_index=True)
+    alasan_penolakan = models.TextField(blank=True, null=True, help_text="Diisi oleh dosen jika permintaan ditolak.")
+    catatan_bimbingan = models.TextField(blank=True, null=True, help_text="Diisi oleh dosen setelah bimbingan selesai.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Bimbingan {self.mahasiswa.nim} - {self.tanggal} ({self.get_status_display()})"
+
+    class Meta:
+        ordering = ['-tanggal', '-waktu']
+        verbose_name = "Jadwal Bimbingan"
+        verbose_name_plural = "Jadwal Bimbingan"
+
 # --- Model TugasAkhir ---
 class TugasAkhir(models.Model):
     mahasiswa = models.OneToOneField(Mahasiswa, on_delete=models.CASCADE, related_name='tugas_akhir')
@@ -87,7 +136,6 @@ class Dokumen(models.Model):
     )
     nama_dokumen = models.CharField(max_length=255, help_text="Name of the document file")
 
-    # MODIFIED: Added validators for file type and size
     file = models.FileField(
         upload_to='dokumen_ta/',
         storage=S3Boto3Storage(),
@@ -102,7 +150,6 @@ class Dokumen(models.Model):
     )
     file_hash = models.CharField(max_length=64, blank=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending', help_text="Approval status of the document", db_index=True)
-    # NEW: Field for revision notes from the Dosen.
     catatan_revisi = models.TextField(
         blank=True, null=True,
         help_text="Catatan dari dosen jika statusnya adalah Revisi"
@@ -117,7 +164,6 @@ class Dokumen(models.Model):
         ordering = ['-uploaded_at']
         verbose_name_plural = "Dokumen"
 
-        # NEW: Add a constraint to prevent duplicate BAB uploads per student
         constraints = [
             UniqueConstraint(
                 fields=['pemilik', 'bab'],

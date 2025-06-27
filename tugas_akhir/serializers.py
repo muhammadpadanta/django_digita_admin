@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from users.serializers import JurusanSerializer
 from users.models import Mahasiswa, Dosen, ProgramStudi
-from .models import RequestDosen, TugasAkhir, Dokumen
+from .models import RequestDosen, TugasAkhir, Dokumen, JadwalBimbingan, Ruangan
 from django.urls import reverse
+import datetime
+
 
 class ProgramStudiSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,14 +25,13 @@ class DosenSimpleSerializer(serializers.ModelSerializer):
         model = Dosen
         fields = ['user_id', 'nik', 'nama_lengkap', 'jurusan']
 
-# --- NEW: Serializer for Supervised Students List ---
+# --- Serializer for Supervised Students List ---
 class SupervisedMahasiswaSerializer(serializers.ModelSerializer):
     """
     Serializer to represent a supervised student, including their thesis title.
     """
     nama_lengkap = serializers.CharField(source='user.get_full_name', read_only=True)
     program_studi = ProgramStudiSerializer(read_only=True)
-    # Get the thesis title from the related TugasAkhir object
     judul_skripsi = serializers.CharField(source='tugas_akhir.judul', read_only=True, default='Belum ada judul')
 
     class Meta:
@@ -182,3 +183,108 @@ class DokumenSerializer(serializers.ModelSerializer):
         validated_data['tugas_akhir'] = tugas_akhir
         validated_data['status'] = 'Pending'
         return super().create(validated_data)
+
+# --- NEW: Serializers for Jadwal Bimbingan ---
+class RuanganSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ruangan
+        fields = ['id', 'nama_ruangan', 'gedung', 'keterangan']
+
+class JadwalBimbinganCreateSerializer(serializers.ModelSerializer):
+    """Serializer for a student to create a new guidance schedule request."""
+    lokasi_ruangan_id = serializers.PrimaryKeyRelatedField(
+        queryset=Ruangan.objects.all(),
+        source='lokasi_ruangan',
+        write_only=True,
+        label="Lokasi Bimbingan"
+    )
+
+    class Meta:
+        model = JadwalBimbingan
+        fields = [
+            'judul_bimbingan', 'tanggal', 'waktu',
+            'lokasi_ruangan_id'
+        ]
+
+    def validate_tanggal(self, value):
+        """Check that the date is not in the past."""
+        if value < datetime.date.today():
+            raise serializers.ValidationError("Tanggal bimbingan tidak boleh di masa lalu.")
+        return value
+
+    def create(self, validated_data):
+        mahasiswa = self.context['request'].user.mahasiswa_profile
+        try:
+            tugas_akhir = TugasAkhir.objects.get(mahasiswa=mahasiswa)
+        except TugasAkhir.DoesNotExist:
+            raise serializers.ValidationError("Anda harus memiliki data Tugas Akhir untuk mengajukan bimbingan.")
+
+        if not tugas_akhir.dosen_pembimbing:
+            raise serializers.ValidationError("Dosen pembimbing Anda belum ditentukan.")
+
+        validated_data['mahasiswa'] = mahasiswa
+        validated_data['dosen_pembimbing'] = tugas_akhir.dosen_pembimbing
+        validated_data['status'] = 'PENDING'
+
+        return super().create(validated_data)
+
+
+class JadwalBimbinganListSerializer(serializers.ModelSerializer):
+    """Serializer for listing guidance schedules with nested details."""
+    mahasiswa = MahasiswaSimpleSerializer(read_only=True)
+    dosen_pembimbing = DosenSimpleSerializer(read_only=True)
+    lokasi_ruangan = RuanganSerializer(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = JadwalBimbingan
+        fields = [
+            'id', 'mahasiswa', 'dosen_pembimbing', 'judul_bimbingan',
+            'tanggal', 'waktu', 'lokasi_ruangan',
+            'status', 'status_display', 'alasan_penolakan', 'catatan_bimbingan',
+            'created_at', 'updated_at'
+        ]
+
+class JadwalBimbinganDosenResponseSerializer(serializers.ModelSerializer):
+    """Serializer for Dosen to respond to a PENDING request."""
+    status = serializers.ChoiceField(choices=[('ACCEPTED', 'ACCEPTED'), ('REJECTED', 'REJECTED')])
+    alasan_penolakan = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = JadwalBimbingan
+        fields = ['status', 'alasan_penolakan']
+
+    def validate(self, data):
+        if self.instance and self.instance.status != 'PENDING':
+            raise serializers.ValidationError("Hanya permintaan dengan status PENDING yang bisa direspon.")
+
+        status = data.get('status')
+        alasan = data.get('alasan_penolakan')
+
+        if status == 'REJECTED' and not alasan:
+            raise serializers.ValidationError({"alasan_penolakan": "Alasan penolakan wajib diisi jika permintaan ditolak."})
+
+        if status == 'ACCEPTED':
+            # Clear any previous rejection reason when accepting.
+            data['alasan_penolakan'] = None
+
+        return data
+
+class JadwalBimbinganDosenCompleteSerializer(serializers.ModelSerializer):
+    """Serializer for Dosen to mark an ACCEPTED session as DONE."""
+    catatan_bimbingan = serializers.CharField(required=True)
+
+    class Meta:
+        model = JadwalBimbingan
+        fields = ['catatan_bimbingan']
+
+    def validate(self, data):
+        if self.instance and self.instance.status != 'ACCEPTED':
+            raise serializers.ValidationError("Hanya bimbingan yang sudah disetujui yang bisa diselesaikan.")
+        return data
+
+    def update(self, instance, validated_data):
+        instance.status = 'DONE'
+        instance.catatan_bimbingan = validated_data.get('catatan_bimbingan', instance.catatan_bimbingan)
+        instance.save()
+        return instance
