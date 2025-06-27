@@ -209,6 +209,11 @@ def delete_document_view(request, pk):
     """
     document = get_object_or_404(Dokumen, pk=pk)
 
+    if not hasattr(request.user, 'mahasiswa_profile') or document.pemilik != request.user.mahasiswa_profile:
+        if not request.user.is_staff:
+            messages.error(request, "Anda tidak memiliki izin untuk menghapus dokumen ini.")
+            return redirect('tugas_akhir:document-list')
+
     try:
         document.file.delete(save=False)
         document.delete()
@@ -396,7 +401,6 @@ def delete_tugas_akhir_view(request, pk):
     return redirect('tugas_akhir:ta-list')
 
 @login_required
-@login_required
 def edit_tugas_akhir_view(request, pk):
     """
     Handles fetching and updating a TugasAkhir instance via AJAX.
@@ -455,3 +459,4 @@ def get_tugas_akhir_for_mahasiswa(request, mahasiswa_id):
             'error': 'Mahasiswa ini belum memiliki data Tugas Akhir.'
         }
     return JsonResponse(data)
+

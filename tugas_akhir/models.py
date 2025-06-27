@@ -43,7 +43,7 @@ class RequestDosen(models.Model):
     ]
     mahasiswa = models.ForeignKey(Mahasiswa, on_delete=models.CASCADE, related_name='request_dosen_sent')
     dosen = models.ForeignKey(Dosen, on_delete=models.CASCADE, related_name='request_dosen_received')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', db_index=True)
     rencana_judul = models.CharField(max_length=255, null=True, blank=False)
     rencana_deskripsi = models.TextField(null=True, blank=False)
     alasan_memilih_dosen = models.TextField(null=True, blank=True)
@@ -101,7 +101,7 @@ class Dokumen(models.Model):
         ]
     )
     file_hash = models.CharField(max_length=64, blank=True, editable=False)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending', help_text="Approval status of the document")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending', help_text="Approval status of the document", db_index=True)
     # NEW: Field for revision notes from the Dosen.
     catatan_revisi = models.TextField(
         blank=True, null=True,
