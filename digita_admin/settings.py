@@ -19,7 +19,7 @@ DEBUG = os.environ.get('DEBUG', '1') == '1'
 # A list of strings representing the host/domain names that this Django site can serve.
 # It's populated from an environment variable, splitting a space-separated string.
 ALLOWED_HOSTS_STRING = os.environ.get('ALLOWED_HOSTS')
-ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(' ') if ALLOWED_HOSTS_STRING else ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(',') if ALLOWED_HOSTS_STRING else ['localhost', '127.0.0.1']
 
 
 # --- Application Definitions ---
