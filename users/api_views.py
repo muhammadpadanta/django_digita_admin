@@ -14,6 +14,8 @@ from .serializers import (
     DosenSerializer,
     JurusanSerializer,
     LoginSerializer,
+    MahasiswaProfileSerializer,
+    DosenProfileSerializer,
     MahasiswaDetailSerializer,
     ProgramStudiSerializer,
     RegisterDosenSerializer,
@@ -224,3 +226,34 @@ class LogoutView(DRFView):
                 {"status": "error", "message": "Token is invalid or expired."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class MahasiswaProfileView(generics.RetrieveUpdateAPIView):
+    """
+    API endpoint for the logged-in student to view and update their profile.
+    Provides GET (retrieve) and PUT/PATCH (update) handlers.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = MahasiswaProfileSerializer
+
+    def get_object(self):
+        """
+        Overrides the default method to ensure the user can only access their own profile.
+        """
+        # Ensure the related data is fetched efficiently
+        return Mahasiswa.objects.select_related('user', 'program_studi__jurusan').get(user=self.request.user)
+
+
+class DosenProfileView(generics.RetrieveUpdateAPIView):
+    """
+    API endpoint for the logged-in lecturer to view and update their profile.
+    Provides GET (retrieve) and PUT/PATCH (update) handlers.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = DosenProfileSerializer
+
+    def get_object(self):
+        """
+        Overrides the default method to ensure the user can only access their own profile.
+        """
+        # Ensure the related data is fetched efficiently
+        return Dosen.objects.select_related('user', 'jurusan').get(user=self.request.user)

@@ -220,6 +220,86 @@ class MahasiswaDetailSerializer(serializers.ModelSerializer):
             'nama_lengkap',
             'email',
             'program_studi',
-            'dosen_pembimbing'
+            'dosen_pembimbing',
+            'dosen_pembimbing_id',
         ]
         read_only_fields = fields
+
+# --- Profile Update Serializers ---
+
+class MahasiswaProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving and updating the logged-in student's profile.
+    """
+    nama_lengkap = serializers.CharField(source='user.first_name', max_length=255)
+    email = serializers.EmailField(source='user.email')
+    nim = serializers.CharField(read_only=True)
+    program_studi_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProgramStudi.objects.all(),
+        source='program_studi',
+        write_only=True,
+        label="ID Program Studi"
+    )
+    # Provides a readable representation for GET requests
+    program_studi = ProgramStudiSerializer(read_only=True)
+    jurusan = serializers.StringRelatedField(source='program_studi.jurusan', read_only=True)
+
+
+    class Meta:
+        model = Mahasiswa
+        fields = [
+            'nim',
+            'nama_lengkap',
+            'email',
+            'program_studi',
+            'jurusan',
+            'program_studi_id' # For writing/updating
+        ]
+
+    def update(self, instance, validated_data):
+        # Handle nested User model update
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+        user.first_name = user_data.get('first_name', user.first_name)
+        user.email = user_data.get('email', user.email)
+        # Check if email is being changed to one that already exists
+        if 'email' in user_data and User.objects.exclude(pk=user.pk).filter(email=user_data['email']).exists():
+            raise serializers.ValidationError({"email": "This email is already in use by another account."})
+        user.save()
+
+        # Handle Mahasiswa model update
+        return super().update(instance, validated_data)
+
+class DosenProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving and updating the logged-in lecturer's profile.
+    """
+    nama_lengkap = serializers.CharField(source='user.first_name', max_length=255)
+    email = serializers.EmailField(source='user.email')
+    nik = serializers.CharField(read_only=True)
+    jurusan_id = serializers.PrimaryKeyRelatedField(
+        queryset=Jurusan.objects.all(),
+        source='jurusan',
+        write_only=True,
+        label="ID Jurusan"
+    )
+    # Provides a readable representation for GET requests
+    jurusan = JurusanSerializer(read_only=True)
+
+    class Meta:
+        model = Dosen
+        fields = ['nik', 'nama_lengkap', 'email', 'jurusan', 'jurusan_id']
+
+    def update(self, instance, validated_data):
+        # Handle nested User model update
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+        user.first_name = user_data.get('first_name', user.first_name)
+        user.email = user_data.get('email', user.email)
+        # Check if email is being changed to one that already exists
+        if 'email' in user_data and User.objects.exclude(pk=user.pk).filter(email=user_data['email']).exists():
+            raise serializers.ValidationError({"email": "This email is already in use by another account."})
+        user.save()
+
+        # Handle Dosen model update
+        return super().update(instance, validated_data)

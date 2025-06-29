@@ -13,6 +13,8 @@ router.register(r'program-studi', api_views.ProgramStudiViewSet, basename='progr
 
 urlpatterns = [
     # API endpoints from api_views
+    path('profil/mahasiswa/', api_views.MahasiswaProfileView.as_view(), name='profil-mahasiswa'),
+    path('profil/dosen/', api_views.DosenProfileView.as_view(), name='profil-dosen'),
     path('mahasiswa/register/', api_views.RegisterMahasiswaView.as_view(), name='register-mahasiswa'),
     path('dosen/register/', api_views.RegisterDosenView.as_view(), name='register-dosen'),
     path('login/', api_views.LoginView.as_view(), name='login'),
