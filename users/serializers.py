@@ -245,7 +245,6 @@ class MahasiswaProfileSerializer(serializers.ModelSerializer):
     jurusan = serializers.StringRelatedField(source='program_studi.jurusan', read_only=True)
     dosen_pembimbing = serializers.StringRelatedField(read_only=True)
 
-
     class Meta:
         model = Mahasiswa
         fields = [
@@ -259,18 +258,38 @@ class MahasiswaProfileSerializer(serializers.ModelSerializer):
             'dosen_pembimbing_id',
         ]
 
+    def to_representation(self, instance):
+        """
+        Customize the serialized output to show the full name.
+        """
+        representation = super().to_representation(instance)
+        if hasattr(instance.user, 'get_full_name'):
+            representation['nama_lengkap'] = instance.user.get_full_name()
+        return representation
+
     def update(self, instance, validated_data):
         # Handle nested User model update
         user_data = validated_data.pop('user', {})
         user = instance.user
-        user.first_name = user_data.get('first_name', user.first_name)
-        user.email = user_data.get('email', user.email)
-        # Check if email is being changed to one that already exists
-        if 'email' in user_data and User.objects.exclude(pk=user.pk).filter(email=user_data['email']).exists():
-            raise serializers.ValidationError({"email": "This email is already in use by another account."})
+
+        # Update user's full name from 'nama_lengkap'
+        if 'first_name' in user_data:
+            full_name = user_data['first_name']
+            name_parts = full_name.split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+        # Update user's email
+        if 'email' in user_data:
+            new_email = user_data['email']
+            # Check if email is being changed to one that already exists
+            if User.objects.exclude(pk=user.pk).filter(email=new_email).exists():
+                raise serializers.ValidationError({"email": "This email is already in use by another account."})
+            user.email = new_email
+
         user.save()
 
-        # Handle Mahasiswa model update
+        # Handle Mahasiswa model update for other fields (e.g., program_studi)
         return super().update(instance, validated_data)
 
 class DosenProfileSerializer(serializers.ModelSerializer):
