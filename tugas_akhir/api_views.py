@@ -20,7 +20,7 @@ from .serializers import (
     DokumenSerializer, DokumenStatusUpdateSerializer, RequestDosenCreateSerializer,
     RequestDosenListSerializer, RequestDosenRespondSerializer, SupervisedMahasiswaSerializer,
     JadwalBimbinganCreateSerializer, JadwalBimbinganListSerializer, JadwalBimbinganDosenResponseSerializer,
-    JadwalBimbinganDosenCompleteSerializer, RuanganSerializer
+    JadwalBimbinganDosenCompleteSerializer, RuanganSerializer, JadwalBimbinganRescheduleSerializer
 )
 
 # --- View to list supervised students ---
@@ -289,6 +289,8 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
             return JadwalBimbinganDosenResponseSerializer
         if self.action == 'complete':
             return JadwalBimbinganDosenCompleteSerializer
+        if self.action == 'reschedule':
+            return JadwalBimbinganRescheduleSerializer
         return JadwalBimbinganListSerializer # For list and retrieve
 
     def get_permissions(self):
@@ -297,6 +299,8 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
             self.permission_classes = [permissions.IsAuthenticated, IsMahasiswa]
         elif self.action == 'respond' or self.action == 'complete':
             self.permission_classes = [permissions.IsAuthenticated, IsJadwalDosen]
+        elif self.action == 'reschedule':
+            self.permission_classes = [permissions.IsAuthenticated, IsJadwalOwner]
         elif self.action in ['retrieve', 'update', 'partial_update']:
             self.permission_classes = [permissions.IsAuthenticated, IsJadwalOwnerOrDosen]
         else: # list
@@ -330,4 +334,16 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
         # The save method returns the updated instance
         updated_instance = serializer.save()
         # Serialize the UPDATED instance for the response
+        return Response(JadwalBimbinganListSerializer(updated_instance).data)
+
+    @action(detail=True, methods=['patch'], url_path='reschedule')
+    def reschedule(self, request, pk=None):
+        """
+        Custom action for a Mahasiswa to reschedule a REJECTED guidance request.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_instance = serializer.save()
+        # Serialize the updated instance for the response using the list serializer
         return Response(JadwalBimbinganListSerializer(updated_instance).data)

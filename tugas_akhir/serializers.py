@@ -131,7 +131,7 @@ class DokumenSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
 
     # Use write_only for the file upload field. The client won't receive this field on GET.
-    file = serializers.FileField(write_only=True)
+    file = serializers.FileField(write_only=True, required=False)
 
     class Meta:
         model = Dokumen
@@ -183,6 +183,22 @@ class DokumenSerializer(serializers.ModelSerializer):
         validated_data['tugas_akhir'] = tugas_akhir
         validated_data['status'] = 'Pending'
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Custom update logic for a Mahasiswa. When a document is updated
+        (e.g., a new file is uploaded), its status is automatically reset
+        to 'Pending' and revision notes are cleared.
+        """
+        # Perform the default update for the fields provided in the request
+        instance = super().update(instance, validated_data)
+
+        # Automatically reset status to 'Pending' for re-evaluation
+        instance.status = 'Pending'
+        instance.catatan_revisi = None
+        instance.save()
+
+        return instance
 
 # --- NEW: Serializers for Jadwal Bimbingan ---
 class RuanganSerializer(serializers.ModelSerializer):
@@ -288,3 +304,40 @@ class JadwalBimbinganDosenCompleteSerializer(serializers.ModelSerializer):
         instance.catatan_bimbingan = validated_data.get('catatan_bimbingan', instance.catatan_bimbingan)
         instance.save()
         return instance
+
+class JadwalBimbinganRescheduleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for a student to reschedule a rejected guidance session.
+    """
+    lokasi_ruangan_id = serializers.PrimaryKeyRelatedField(
+        queryset=Ruangan.objects.all(),
+        source='lokasi_ruangan',
+        write_only=True,
+        required=False, # Make it optional if they just want to change time/title
+        label="Lokasi Bimbingan Baru"
+    )
+
+    class Meta:
+        model = JadwalBimbingan
+        fields = ['judul_bimbingan', 'tanggal', 'waktu', 'lokasi_ruangan_id']
+
+    def validate_tanggal(self, value):
+        """Check that the date is not in the past."""
+        if value < datetime.date.today():
+            raise serializers.ValidationError("Tanggal bimbingan tidak boleh di masa lalu.")
+        return value
+
+    def validate(self, data):
+        """Check that the schedule is in a 'REJECTED' state before rescheduling."""
+        if self.instance and self.instance.status != 'REJECTED':
+            raise serializers.ValidationError("Hanya jadwal bimbingan yang telah ditolak ('REJECTED') yang bisa dijadwalkan ulang.")
+        return data
+
+    def update(self, instance, validated_data):
+        """Handle the update and reset the status to PENDING."""
+        instance = super().update(instance, validated_data)
+        instance.status = 'PENDING'
+        instance.alasan_penolakan = None  # Clear the old rejection reason
+        instance.save()
+        return instance
+
