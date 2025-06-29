@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 api_v1_patterns = [
     path('users/', include('users.api_urls')),
     path('tugas-akhir/', include('tugas_akhir.api_urls')),
+    path('announcements/', include('announcements.api_urls')),
 ]
 
 urlpatterns = [
