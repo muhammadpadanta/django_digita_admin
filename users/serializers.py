@@ -243,6 +243,7 @@ class MahasiswaProfileSerializer(serializers.ModelSerializer):
     # Provides a readable representation for GET requests
     program_studi = ProgramStudiSerializer(read_only=True)
     jurusan = serializers.StringRelatedField(source='program_studi.jurusan', read_only=True)
+    dosen_pembimbing = serializers.StringRelatedField(read_only=True)
 
 
     class Meta:
@@ -253,7 +254,9 @@ class MahasiswaProfileSerializer(serializers.ModelSerializer):
             'email',
             'program_studi',
             'jurusan',
-            'program_studi_id' # For writing/updating
+            'program_studi_id',
+            'dosen_pembimbing',
+            'dosen_pembimbing_id',
         ]
 
     def update(self, instance, validated_data):
@@ -283,23 +286,38 @@ class DosenProfileSerializer(serializers.ModelSerializer):
         write_only=True,
         label="ID Jurusan"
     )
-    # Provides a readable representation for GET requests
     jurusan = JurusanSerializer(read_only=True)
 
     class Meta:
         model = Dosen
         fields = ['nik', 'nama_lengkap', 'email', 'jurusan', 'jurusan_id']
 
+    def to_representation(self, instance):
+        """
+        Customize the serialized output.
+        """
+        representation = super().to_representation(instance)
+        if hasattr(instance.user, 'get_full_name'):
+            representation['nama_lengkap'] = instance.user.get_full_name()
+        return representation
+
     def update(self, instance, validated_data):
-        # Handle nested User model update
+        """
+        Handle the update for the Dosen and nested User model.
+        """
         user_data = validated_data.pop('user', {})
         user = instance.user
-        user.first_name = user_data.get('first_name', user.first_name)
+
+        if 'first_name' in user_data:
+            full_name = user_data['first_name']
+            name_parts = full_name.split(' ', 1)
+            user.first_name = name_parts[0]
+            user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+
         user.email = user_data.get('email', user.email)
-        # Check if email is being changed to one that already exists
-        if 'email' in user_data and User.objects.exclude(pk=user.pk).filter(email=user_data['email']).exists():
+        if 'email' in user_data and User.objects.exclude(pk=user.pk).filter(email=user.email).exists():
             raise serializers.ValidationError({"email": "This email is already in use by another account."})
+
         user.save()
 
-        # Handle Dosen model update
         return super().update(instance, validated_data)
