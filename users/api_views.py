@@ -205,7 +205,7 @@ class LogoutView(DRFView):
     API view for user logout.
     - Handles POST requests to blacklist the provided refresh token.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get("refresh")
