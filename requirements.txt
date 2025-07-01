@@ -20,3 +20,4 @@ python-decouple
 django-storages
 django-cleanup
 django-crum
+firebase-admin

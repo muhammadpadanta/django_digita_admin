@@ -5,16 +5,12 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import ListView, View
-from django.urls import reverse_lazy
-
 from .models import Pengumuman
 from .forms import PengumumanForm
+from core.firebase_utils import send_notification_to_all_users
+
 
 class AnnouncementListView(LoginRequiredMixin, ListView):
-    """
-    Displays a list of all announcements with pagination.
-    Also provides the form for the 'Add Announcement' modal.
-    """
     model = Pengumuman
     template_name = 'core/announcements.html'
     context_object_name = 'announcements'
@@ -27,26 +23,33 @@ class AnnouncementListView(LoginRequiredMixin, ListView):
 
 
 class AnnouncementCreateView(LoginRequiredMixin, View):
-    """
-    Handles the creation of a new announcement via an AJAX POST request.
-    """
     def post(self, request, *args, **kwargs):
-        form = PengumumanForm(request.POST, request.FILES)
+        form = PengumumanForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             announcement = form.save()
+
+            # --- TRIGGER NOTIFICATION ---
+            try:
+                title = announcement.judul
+                body = announcement.deskripsi
+                data = {
+                    'announcement_id': str(announcement.id),
+                    'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                    'screen': 'announcement_detail', # Custom key to tell Flutter where to navigate
+                }
+                send_notification_to_all_users(title=title, body=body, data=data)
+            except Exception as e:
+                # Log the error, but don't let it crash the main request
+                print(f"Failed to send notification for new announcement: {e}")
+
             messages.success(request, f"Pengumuman '{announcement.judul}' berhasil dibuat.")
             return JsonResponse({'status': 'success'})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
 
-
 class AnnouncementUpdateView(LoginRequiredMixin, View):
-    """
-    Handles fetching data for and updating an announcement via AJAX.
-    """
     def get(self, request, pk):
-        # No changes needed here. This is perfectly fine.
         announcement = get_object_or_404(Pengumuman, pk=pk)
         data = {
             'judul': announcement.judul,
@@ -58,10 +61,7 @@ class AnnouncementUpdateView(LoginRequiredMixin, View):
         return JsonResponse(data)
 
     def post(self, request, pk):
-        """Update the announcement."""
         announcement = get_object_or_404(Pengumuman, pk=pk)
-
-        # --- The only change is on this next line ---
         form = PengumumanForm(request.POST, request.FILES, instance=announcement, user=request.user)
 
         if form.is_valid():
@@ -72,11 +72,7 @@ class AnnouncementUpdateView(LoginRequiredMixin, View):
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
 
-
 class AnnouncementDeleteView(LoginRequiredMixin, View):
-    """
-    Handles the deletion of an announcement.
-    """
     def post(self, request, pk, *args, **kwargs):
         try:
             announcement = Pengumuman.objects.get(pk=pk)

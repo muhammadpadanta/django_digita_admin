@@ -8,6 +8,7 @@ api_v1_patterns = [
     path('users/', include('users.api_urls')),
     path('tugas-akhir/', include('tugas_akhir.api_urls')),
     path('announcements/', include('announcements.api_urls')),
+    path('core/', include('core.api_urls')),
 ]
 
 urlpatterns = [

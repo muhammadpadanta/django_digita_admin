@@ -45,3 +45,30 @@ class ActivityLog(models.Model):
         if self.target:
             return f"{self.actor.username} {self.verb} {self.target}"
         return f"{self.actor.username} {self.verb}"
+
+class FCMDevice(models.Model):
+    """
+    Represents a device registered for Firebase Cloud Messaging.
+    Links a user to a specific device token.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='fcm_devices',
+        help_text="The user associated with this device."
+    )
+    fcm_token = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Firebase Cloud Messaging device token."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "FCM Device"
+        verbose_name_plural = "FCM Devices"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Device for {self.user.username}"
