@@ -8,7 +8,8 @@ from .models import FCMDevice
 
 class RegisterFCMDeviceView(APIView):
     """
-    API view for a logged-in user to register or update their FCM device token.
+    API view for a logged-in user to register their FCM device token.
+    This logic correctly handles multiple devices per user.
     """
     permission_classes = [IsAuthenticated]
 
@@ -22,19 +23,17 @@ class RegisterFCMDeviceView(APIView):
             )
 
         device, created = FCMDevice.objects.update_or_create(
-            user=request.user,
-            defaults={'fcm_token': fcm_token}
+            fcm_token=fcm_token,
+            defaults={'user': request.user}
         )
-
-        FCMDevice.objects.filter(fcm_token=fcm_token).exclude(user=request.user).delete()
 
         if created:
             return Response(
-                {'status': 'FCM token registered successfully.'},
+                {'status': 'New device registered successfully.'},
                 status=status.HTTP_201_CREATED
             )
         else:
             return Response(
-                {'status': 'FCM token updated successfully.'},
+                {'status': 'Existing device re-associated with user.'},
                 status=status.HTTP_200_OK
             )

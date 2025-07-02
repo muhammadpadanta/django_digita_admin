@@ -69,3 +69,32 @@ def send_notification_to_all_users(title, body, data=None):
     print(f"Success count: {success_count}")
     print(f"Failure count: {failure_count}")
 
+def send_notification_to_user(user, title, body, data=None):
+    """
+    Sends a push notification to all devices registered to a specific user.
+    """
+    if not firebase_admin._apps:
+        print("Firebase app not initialized. Cannot send notification.")
+        return
+
+    # Gets all device tokens associated with the user via the 'fcm_devices' related_name in the FCMDevice model
+    fcm_tokens = list(user.fcm_devices.values_list('fcm_token', flat=True))
+
+    if not fcm_tokens:
+        print(f"User {user.username} has no registered FCM tokens.")
+        return
+
+    message = messaging.MulticastMessage(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        data=data if data else {},
+        tokens=fcm_tokens,
+    )
+
+    try:
+        response = messaging.send_multicast(message)
+        print(f"Successfully sent {response.success_count} messages to user {user.username}")
+    except Exception as e:
+        print(f"Failed to send multicast message to user {user.username}: {e}")
