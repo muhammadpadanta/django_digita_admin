@@ -11,8 +11,10 @@ try:
     SERVICE_ACCOUNT_KEY_PATH = os.path.join(settings.BASE_DIR, 'firebase-service-account-key.json')
 
     if not firebase_admin._apps:
-        cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
-        firebase_admin.initialize_app(cred)
+        # cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
+        # firebase_admin.initialize_app(cred)
+        cred = credentials.ApplicationDefault()
+        default_app = firebase_admin.initialize_app(cred)
 
     project_id = firebase_admin.get_app().project_id
     print(f"Firebase Admin SDK initialized successfully for project: {project_id}")

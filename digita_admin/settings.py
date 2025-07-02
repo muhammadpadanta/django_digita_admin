@@ -3,6 +3,17 @@ from pathlib import Path
 from datetime import timedelta
 import dj_database_url
 from decouple import config
+import base64
+
+firebase_creds_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_BASE64")
+if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+    # Fallback for Railway-style setup
+    firebase_creds_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_BASE64")
+    if firebase_creds_b64:
+        firebase_creds_path = "/tmp/firebase-service-account.json"
+        with open(firebase_creds_path, "wb") as f:
+            f.write(base64.b64decode(firebase_creds_b64))
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = firebase_creds_path
 
 # --- Environment Variable Loading ---
 # Attempts to load environment variables from a .env file for local development.
