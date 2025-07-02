@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from users.serializers import JurusanSerializer
 from users.models import Mahasiswa, Dosen, ProgramStudi
+from core.firebase_utils import send_notification_to_user
 from .models import RequestDosen, TugasAkhir, Dokumen, JadwalBimbingan, Ruangan
 from django.urls import reverse
 import datetime
@@ -187,9 +188,12 @@ class DokumenSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Custom update logic for a Mahasiswa. When a document is updated
-        (e.g., a new file is uploaded), its status is automatically reset
-        to 'Pending' and revision notes are cleared.
+        (e.g., a new file is uploaded), its status is reset to 'Pending'
+        and the Dosen is notified if the original status was 'Revisi'.
         """
+        # Capture the document's status before any changes are made.
+        original_status = instance.status
+
         # Perform the default update for the fields provided in the request
         instance = super().update(instance, validated_data)
 
@@ -198,7 +202,38 @@ class DokumenSerializer(serializers.ModelSerializer):
         instance.catatan_revisi = None
         instance.save()
 
+        # --- 🚀 NOTIFICATION LOGIC FOR REVISION UPLOAD ---
+        # If the document was in 'Revisi' status, notify the Dosen.
+        if original_status == 'Revisi':
+            try:
+                # Check if the supervisor exists
+                if instance.tugas_akhir and instance.tugas_akhir.dosen_pembimbing:
+                    recipient_user = instance.tugas_akhir.dosen_pembimbing.user
+                    student_name = instance.pemilik.user.get_full_name()
+
+                    title = "Dokumen Revisi Telah Diunggah"
+                    body = f"{student_name} telah mengunggah perbaikan untuk dokumen: '{instance.nama_dokumen}'."
+
+                    # Data payload for client-side navigation
+                    data = {
+                        'document_id': str(instance.id),
+                        'mahasiswa_id': str(instance.pemilik.user_id),
+                        'screen': 'document_detail'
+                    }
+
+                    send_notification_to_user(
+                        user=recipient_user,
+                        title=title,
+                        body=body,
+                        data=data
+                    )
+            except Exception as e:
+                # Log the error but do not let it crash the main request
+                print(f"Failed to send notification for revised document upload: {e}")
+        # --- END NOTIFICATION LOGIC ---
+
         return instance
+
 
 # --- NEW: Serializers for Jadwal Bimbingan ---
 class RuanganSerializer(serializers.ModelSerializer):

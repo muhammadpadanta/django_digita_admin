@@ -8,7 +8,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework import serializers
 from django.conf import settings
-
+from core.firebase_utils import send_notification_to_user
 from .models import Dokumen, RequestDosen, TugasAkhir, Mahasiswa, JadwalBimbingan, Ruangan
 from .permissions import (
     IsDokumenOwner, IsDosen, IsMahasiswa, IsMahasiswaOrDosen,
@@ -175,10 +175,37 @@ class DokumenViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Saves the new document instance. The serializer's `create` method
-        handles assigning the owner and related 'TugasAkhir' instance.
+        Saves the new document instance and notifies the supervising Dosen.
         """
-        serializer.save()
+        # The serializer.save() returns the created object instance
+        new_document = serializer.save()
+
+        # --- 🚀 NOTIFICATION LOGIC FOR DOSEN ---
+        try:
+            # Ensure the thesis and supervisor exist
+            if new_document.tugas_akhir and new_document.tugas_akhir.dosen_pembimbing:
+                recipient_user = new_document.tugas_akhir.dosen_pembimbing.user
+                student_name = new_document.pemilik.user.get_full_name()
+
+                title = "Mahasiswa Mengunggah Dokumen Baru"
+                body = f"{student_name} telah mengunggah dokumen baru: '{new_document.nama_dokumen}'."
+
+                # Data payload for client-side navigation
+                data = {
+                    'mahasiswa_id': str(new_document.pemilik.user_id),
+                    'screen': 'document_list_for_student'
+                }
+
+                send_notification_to_user(
+                    user=recipient_user,
+                    title=title,
+                    body=body,
+                    data=data
+                )
+        except Exception as e:
+            # Log the error but do not let it crash the main request
+            print(f"Failed to send notification for new document upload: {e}")
+        # --- END NOTIFICATION LOGIC ---
 
     def destroy(self, request, *args, **kwargs):
         """Overrides the default destroy method to return a success message."""
@@ -201,7 +228,32 @@ class DokumenViewSet(viewsets.ModelViewSet):
 
         if serializer.is_valid():
             serializer.save()
-            # Return the full, updated document data using the main serializer
+
+            # --- 🚀 NOTIFICATION LOGIC FOR MAHASISWA ---
+            try:
+                recipient_user = dokumen.pemilik.user
+                new_status = dokumen.get_status_display() # Gets "Disetujui" or "Revisi"
+
+                title = f"Update Status Dokumen kamu nih!"
+                body = f"Dokumen '{dokumen.nama_dokumen}' telah diupdate menjadi {new_status}."
+
+                # Data payload for client-side navigation
+                data = {
+                    'document_id': str(dokumen.id),
+                    'screen': 'document_detail'
+                }
+
+                send_notification_to_user(
+                    user=recipient_user,
+                    title=title,
+                    body=body,
+                    data=data
+                )
+            except Exception as e:
+                # Log the error but do not let it crash the main request
+                print(f"Failed to send notification for document status update: {e}")
+            # --- END NOTIFICATION LOGIC ---
+
             return Response(DokumenSerializer(dokumen, context={'request': request}).data)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
