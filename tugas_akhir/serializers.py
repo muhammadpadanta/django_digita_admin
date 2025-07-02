@@ -277,7 +277,34 @@ class JadwalBimbinganCreateSerializer(serializers.ModelSerializer):
         validated_data['dosen_pembimbing'] = tugas_akhir.dosen_pembimbing
         validated_data['status'] = 'PENDING'
 
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK DOSEN ---
+        try:
+            recipient_user = instance.dosen_pembimbing.user
+            student_name = instance.mahasiswa.user.get_full_name()
+
+            title = "Permintaan Jadwal Bimbingan Baru"
+            body = f"{student_name} telah mengajukan permintaan bimbingan baru untuk tanggal {instance.tanggal.strftime('%d %B %Y')}."
+
+            data = {
+                'schedule_id': str(instance.id),
+                'mahasiswa_id': str(instance.mahasiswa.user_id),
+                'screen': 'guidance_schedule_detail'
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            print(f"Gagal mengirim notifikasi untuk permintaan bimbingan baru: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
+
+        return instance
+
 
 
 class JadwalBimbinganListSerializer(serializers.ModelSerializer):

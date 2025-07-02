@@ -101,9 +101,10 @@ class SupervisionRequestDetailUpdateView(generics.RetrieveUpdateAPIView):
     def perform_update(self, serializer):
         request_instance = self.get_object()
         new_status = serializer.validated_data.get('status')
+        dosen_profile = request_instance.dosen
+
         if new_status == 'ACCEPTED':
             mahasiswa_profile = request_instance.mahasiswa
-            dosen_profile = request_instance.dosen
             if TugasAkhir.objects.filter(mahasiswa=mahasiswa_profile).exists():
                 raise ValidationError("Mahasiswa ini sudah memiliki data Tugas Akhir.")
             TugasAkhir.objects.create(
@@ -114,8 +115,32 @@ class SupervisionRequestDetailUpdateView(generics.RetrieveUpdateAPIView):
             )
             mahasiswa_profile.dosen_pembimbing = dosen_profile
             mahasiswa_profile.save(update_fields=['dosen_pembimbing'])
+
         serializer.save()
 
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK MAHASISWA ---
+        try:
+            recipient_user = request_instance.mahasiswa.user
+            dosen_name = dosen_profile.user.get_full_name()
+            status_display = "Disetujui" if new_status == 'ACCEPTED' else "Ditolak"
+
+            title = "Update Permintaan Dosen Pembimbing"
+            body = f"Permintaanmu kepada {dosen_name} sebagai pembimbing telah {status_display}."
+
+            data = {
+                'request_id': str(request_instance.id),
+                'screen': 'supervision_request_detail'
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            print(f"Gagal mengirim notifikasi untuk respons permintaan dosen: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
 
 class DokumenViewSet(viewsets.ModelViewSet):
     """
@@ -370,9 +395,31 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        # The save method returns the updated instance
         updated_instance = serializer.save()
-        # Serialize the UPDATED instance for the response
+
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK MAHASISWA ---
+        try:
+            recipient_user = updated_instance.mahasiswa.user
+            new_status_display = updated_instance.get_status_display().upper()
+
+            title = f"Update Jadwal Bimbingan Kamu"
+            body = f"Permintaan bimbinganmu untuk tanggal {updated_instance.tanggal.strftime('%d %B %Y')} telah {new_status_display} oleh dosen."
+
+            data = {
+                'schedule_id': str(updated_instance.id),
+                'screen': 'guidance_schedule_detail'
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            print(f"Gagal mengirim notifikasi untuk respons bimbingan: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
+
         return Response(JadwalBimbinganListSerializer(updated_instance).data)
 
     @action(detail=True, methods=['patch'], url_path='complete')
@@ -383,10 +430,33 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        # The save method returns the updated instance
         updated_instance = serializer.save()
-        # Serialize the UPDATED instance for the response
+
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK MAHASISWA ---
+        try:
+            recipient_user = updated_instance.mahasiswa.user
+
+            title = "Sesi Bimbingan Telah Selesai"
+            body = f"Bimbinganmu pada tanggal {updated_instance.tanggal.strftime('%d %B %Y')} telah selesai. Jangan lupa cek catatan dari dosen ya!"
+
+            data = {
+                'schedule_id': str(updated_instance.id),
+                'screen': 'guidance_schedule_detail'
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            # Log error jika terjadi, tapi jangan sampai menghentikan request utama
+            print(f"Gagal mengirim notifikasi untuk bimbingan selesai: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
+
         return Response(JadwalBimbinganListSerializer(updated_instance).data)
+
 
     @action(detail=True, methods=['patch'], url_path='reschedule')
     def reschedule(self, request, pk=None):
@@ -397,5 +467,29 @@ class JadwalBimbinganViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        # Serialize the updated instance for the response using the list serializer
+
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK DOSEN (SAAT RESCHEDULE) ---
+        try:
+            recipient_user = updated_instance.dosen_pembimbing.user
+            student_name = updated_instance.mahasiswa.user.get_full_name()
+
+            title = "Pengajuan Jadwal Bimbingan Ulang"
+            body = f"{student_name} telah mengajukan ulang jadwal bimbingan untuk tanggal {updated_instance.tanggal.strftime('%d %B %Y')}. Mohon ditinjau kembali."
+
+            data = {
+                'schedule_id': str(updated_instance.id),
+                'mahasiswa_id': str(updated_instance.mahasiswa.user_id),
+                'screen': 'guidance_schedule_detail'
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            print(f"Gagal mengirim notifikasi untuk reschedule bimbingan: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
+
         return Response(JadwalBimbinganListSerializer(updated_instance).data)
