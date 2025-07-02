@@ -57,7 +57,7 @@ class SupervisionRequestListCreateView(generics.ListCreateAPIView):
         if hasattr(user, 'mahasiswa_profile'):
             return RequestDosen.objects.filter(mahasiswa=user.mahasiswa_profile).select_related('mahasiswa__user', 'dosen__user')
         if hasattr(user, 'dosen_profile'):
-            return RequestDosen.objects.filter(dosen=user.dosen_profile, status='PENDING').select_related('mahasiswa__user', 'dosen__user')
+            return RequestDosen.objects.filter(dosen=user.dosen_profile).select_related('mahasiswa__user', 'dosen__user')
         return RequestDosen.objects.none()
 
     def get_serializer_class(self):
@@ -71,10 +71,32 @@ class SupervisionRequestListCreateView(generics.ListCreateAPIView):
             raise ValidationError("Anda sudah terdaftar dalam proses Tugas Akhir.")
         if RequestDosen.objects.filter(mahasiswa=mahasiswa_profile, status='PENDING').exists():
             raise ValidationError("Anda sudah memiliki permintaan pembimbing yang PENDING.")
-        requested_dosen = serializer.validated_data['dosen']
-        if hasattr(requested_dosen.user, 'mahasiswa_profile') and requested_dosen.user.mahasiswa_profile == mahasiswa_profile:
-            raise ValidationError("Tidak bisa mengajukan diri sendiri sebagai pembimbing.")
-        serializer.save(mahasiswa=mahasiswa_profile, status='PENDING')
+
+        request_instance = serializer.save(mahasiswa=mahasiswa_profile, status='PENDING')
+
+        # --- 🚀 LOGIKA NOTIFIKASI UNTUK DOSEN ---
+        try:
+            recipient_user = request_instance.dosen.user
+            student_name = mahasiswa_profile.user.get_full_name()
+
+            title = "Permintaan Pembimbing Baru"
+            body = f"Anda menerima permintaan untuk menjadi pembimbing dari {student_name}."
+
+            data = {
+                'request_id': str(request_instance.id),
+                'screen': 'supervision_request_detail' 
+            }
+
+            send_notification_to_user(
+                user=recipient_user,
+                title=title,
+                body=body,
+                data=data
+            )
+        except Exception as e:
+            print(f"Gagal mengirim notifikasi untuk permintaan pembimbing baru: {e}")
+        # --- AKHIR LOGIKA NOTIFIKASI ---
+
 
 
 class SupervisionRequestDetailUpdateView(generics.RetrieveUpdateAPIView):
