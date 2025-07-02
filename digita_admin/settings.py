@@ -205,7 +205,7 @@ REST_FRAMEWORK = {
 
 # --- Simple JWT (JSON Web Token) Settings ---
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120), # Lifespan of an access token
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24), # Lifespan of an access token
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),     # Lifespan of a refresh token
     "ROTATE_REFRESH_TOKENS": False,                  # If True, a new refresh token is issued when one is used
     "BLACKLIST_AFTER_ROTATION": False,               # If True, old refresh tokens are added to a blacklist
