@@ -56,10 +56,15 @@ class SupervisionRequestListCreateView(generics.ListCreateAPIView):
         user = self.request.user
         if hasattr(user, 'mahasiswa_profile'):
             return RequestDosen.objects.filter(mahasiswa=user.mahasiswa_profile).select_related('mahasiswa__user', 'dosen__user')
-        if hasattr(user, 'dosen_profile'):
-            return RequestDosen.objects.filter(dosen=user.dosen_profile).select_related('mahasiswa__user', 'dosen__user')
-        return RequestDosen.objects.none()
 
+        if hasattr(user, 'dosen_profile'):
+            # Modifikasi: Dosen sekarang hanya dapat melihat permintaan dengan status PENDING.
+            return RequestDosen.objects.filter(
+                dosen=user.dosen_profile,
+                status='PENDING'
+            ).select_related('mahasiswa__user', 'dosen__user')
+
+        return RequestDosen.objects.none()
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return RequestDosenCreateSerializer
@@ -84,7 +89,7 @@ class SupervisionRequestListCreateView(generics.ListCreateAPIView):
 
             data = {
                 'request_id': str(request_instance.id),
-                'screen': 'supervision_request_detail' 
+                'screen': 'supervision_request_detail'
             }
 
             send_notification_to_user(
