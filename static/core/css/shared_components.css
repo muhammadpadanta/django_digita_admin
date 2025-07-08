@@ -57,7 +57,7 @@
     text-align: left;
 }
 .data-table th, .data-table td {
-    padding: 16px 0;
+    padding: 16px 12px;
     border-bottom: 1px solid #e9ecef;
     vertical-align: middle;
 }

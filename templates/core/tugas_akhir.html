@@ -43,7 +43,7 @@
                 {% for ta in tugas_akhir_list %}
                 <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#taDetailModal" data-ta-id="{{ ta.pk }}">
                     <td data-label="ID">TA{{ ta.pk|stringformat:"03d" }}</td>
-                    <td data-label="JUDUL">{{ ta.judul|default:"-" }}</td>
+                    <td data-label="JUDUL" class="truncate-cell" title="{{ ta.judul }}">{{ ta.judul|default:"-" }}</td>
                     <td data-label="DESKRIPSI" class="truncate-cell" title="{{ ta.deskripsi }}">{{ ta.deskripsi }}</td>
                     <td data-label="DOSEN PEMBIMBING">
                         {{ ta.dosen_pembimbing.user.get_full_name|default:"Belum Ditentukan" }}

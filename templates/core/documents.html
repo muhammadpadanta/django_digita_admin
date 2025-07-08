@@ -47,7 +47,9 @@
                 {% for doc in documents %}
                 <tr data-row-id="{{ doc.pk }}">
                     <td data-label="BAB" class="doc-bab">{{ doc.bab }}</td>
-                    <td data-label="NAMA DOKUMEN" class="doc-nama">{{ doc.nama_dokumen }}</td>
+                    <td data-label="NAMA DOKUMEN" class="doc-nama truncate-cell" title="{{ doc.nama_dokumen }}">
+                        {{ doc.nama_dokumen }}
+                    </td>
                     <td data-label="STATUS">
                         <span class="status-badge status-{{ doc.status|lower }} doc-status">{{ doc.get_status_display }}</span>
                     </td>
@@ -57,7 +59,9 @@
                             <span class="user-role doc-pemilik-prodi">{{ doc.pemilik.program_studi.nama_prodi }}</span>
                         </div>
                     </td>
-                    <td data-label="JUDUL TA">{{ doc.tugas_akhir.judul|default:"N/A" }}</td>
+                    <td data-label="JUDUL TA" class="truncate-cell" title="{{ doc.tugas_akhir.judul|default:'N/A' }}">
+                        {{ doc.tugas_akhir.judul|default:"N/A" }}
+                    </td>
                     <td data-label="WAKTU UPLOAD">{{ doc.uploaded_at|date:"d F Y, H:i" }}</td>
                     <td data-label="AKSI" class="action-icons">
                         <a class="doc-file-url" href="{% url 'tugas_akhir:document-file' pk=doc.pk %}" target="_blank" title="View File"><i class="fas fa-eye"></i></a>

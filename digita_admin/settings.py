@@ -5,6 +5,14 @@ import dj_database_url
 from decouple import config
 import base64
 
+# --- Environment Variable Loading ---
+# Attempts to load environment variables from a .env file for local development.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 firebase_creds_b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_BASE64")
 if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
     # Fallback for Railway-style setup
@@ -14,14 +22,6 @@ if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
         with open(firebase_creds_path, "wb") as f:
             f.write(base64.b64decode(firebase_creds_b64))
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = firebase_creds_path
-
-# --- Environment Variable Loading ---
-# Attempts to load environment variables from a .env file for local development.
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
 
 # --- Core Django Settings ---
 # Defines the base directory of the project.
@@ -206,7 +206,7 @@ REST_FRAMEWORK = {
 # --- Simple JWT (JSON Web Token) Settings ---
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=24), # Lifespan of an access token
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),     # Lifespan of a refresh token
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),     # Lifespan of a refresh token
     "ROTATE_REFRESH_TOKENS": False,                  # If True, a new refresh token is issued when one is used
     "BLACKLIST_AFTER_ROTATION": False,               # If True, old refresh tokens are added to a blacklist
 }

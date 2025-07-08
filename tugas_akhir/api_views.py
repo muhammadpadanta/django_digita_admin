@@ -103,7 +103,6 @@ class SupervisionRequestListCreateView(generics.ListCreateAPIView):
         # --- AKHIR LOGIKA NOTIFIKASI ---
 
 
-
 class SupervisionRequestDetailUpdateView(generics.RetrieveUpdateAPIView):
     """
     - GET: Retrieves the details of a specific request.

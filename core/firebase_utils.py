@@ -13,7 +13,9 @@ try:
     if not firebase_admin._apps:
         # cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
         # firebase_admin.initialize_app(cred)
-        cred = credentials.ApplicationDefault()
+        cred = credentials.Certificate(
+            os.path.join(settings.BASE_DIR, os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
+        )
         default_app = firebase_admin.initialize_app(cred)
 
     project_id = firebase_admin.get_app().project_id

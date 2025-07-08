@@ -15,3 +15,4 @@ logs/
 .DS_Store
 mise.toml
 firebase-service-account-key.json
+*.iml
