@@ -14,6 +14,7 @@ django-cors-headers==4.7.0   # Handle CORS for API access
 whitenoise                   # Serve static files in production
 django-cleanup               # Auto-deletes files when models are deleted
 django-rich                  # Rich console output for Django commands
+django-simple-history
 
 # Configuration & Environment
 python-decouple              # Read `.env` files for configs
