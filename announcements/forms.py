@@ -31,6 +31,18 @@ class PengumumanForm(forms.ModelForm):
             'lampiran': forms.FileInput(attrs={'class': 'file-input', 'id': 'ann-attachment'}), #
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        tanggal_mulai = cleaned_data.get("tanggal_mulai")
+        tanggal_selesai = cleaned_data.get("tanggal_selesai")
+
+        if tanggal_mulai and tanggal_selesai:
+            if tanggal_selesai < tanggal_mulai:
+                self.add_error('tanggal_selesai', "Tanggal selesai tidak boleh sebelum tanggal mulai.")
+
+        return cleaned_data
+
+
     @transaction.atomic
     def save(self, commit=True):
         # Determine the actor. Fallback to a superuser if not provided.

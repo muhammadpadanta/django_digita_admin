@@ -23,6 +23,7 @@ from .models import Dokumen, TugasAkhir
 from .forms import DokumenEditForm, DokumenCreateForm, TugasAkhirEditForm
 
 
+@login_required
 def document_list_view(request):
     """
     Fetches all documents and renders them in the core/documents.html template.
@@ -451,7 +452,7 @@ def get_tugas_akhir_for_mahasiswa(request, mahasiswa_id):
         data = {
             'success': True,
             'tugas_akhir_id': tugas_akhir.pk,
-            'tugas_akhir_str': str(tugas_akhir) # e.g., "TA 12345678 - Judul Skripsi"
+            'tugas_akhir_str': str(tugas_akhir)
         }
     except TugasAkhir.DoesNotExist:
         data = {

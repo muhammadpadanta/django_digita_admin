@@ -1,23 +1,39 @@
-asgiref==3.8.1
-Django==5.2
-django-cors-headers==4.7.0
-djangorestframework==3.16.0
-djangorestframework_simplejwt==5.5.0
-psycopg2-binary==2.9.10
-PyJWT==2.9.0
-sqlparse==0.5.3
-gunicorn
-dj-database-url
-whitenoise
-pytest
-pytest-django
-django-rich
-pytest-rich
-openpyxl
-django-simple-history
-boto3
-python-decouple
-django-storages
-django-cleanup
-django-crum
-firebase-admin
+# Core Django dependencies
+Django==5.2                    # The main web framework
+asgiref==3.8.1                 # ASGI support (required by Django)
+sqlparse==0.5.3                # SQL formatting for the Django admin
+
+# Django REST Framework & Authentication
+djangorestframework==3.16.0            # Django REST API framework
+djangorestframework_simplejwt==5.5.0   # JWT authentication for DRF
+PyJWT==2.9.0                           # Underlying JWT library
+django-crum                            # Track current user in signals/middleware
+
+# Middleware & Utilities
+django-cors-headers==4.7.0   # Handle CORS for API access
+whitenoise                   # Serve static files in production
+django-cleanup               # Auto-deletes files when models are deleted
+django-rich                  # Rich console output for Django commands
+
+# Configuration & Environment
+python-decouple              # Read `.env` files for configs
+dj-database-url              # Parse database URLs from environment variables
+
+# PostgreSQL support
+psycopg2-binary==2.9.10      # PostgreSQL adapter for Python/Django
+
+# File & Excel Handling
+openpyxl                     # Handle Excel files (.xlsx)
+
+# Storage & Cloud Integration
+boto3                        # AWS SDK for S3 and other services
+django-storages              # S3-compatible file storage backend for Django
+firebase-admin               # Firebase Admin SDK (e.g. for push notifications)
+
+# Production WSGI Server
+gunicorn                     # WSGI server for running Django in production
+
+# Testing
+pytest                       # Python testing framework
+pytest-django                # Django integration for pytest
+pytest-rich                  # Pretty pytest output with Rich

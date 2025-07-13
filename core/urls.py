@@ -11,3 +11,9 @@ urlpatterns = [
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
 ]
+
+# Include other app URLs for a modular structure
+urlpatterns += [
+    path('users/', include('users.urls', namespace='users')),
+    path('announcements/', include('announcements.urls', namespace='announcements')),
+]
