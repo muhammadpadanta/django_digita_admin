@@ -3,6 +3,7 @@
 Backend REST API untuk aplikasi manajemen tugas akhir (skripsi/tesis) antara mahasiswa dan dosen. Dibangun menggunakan Django dan Django REST Framework, dengan database PostgreSQL. Proyek ini dikonfigurasi untuk dijalankan menggunakan Docker dan Docker Compose untuk kemudahan setup environment pengembangan.
 
 Made by PBL-IF09:
+
 - 3312301009 JUAN JONATHAN NAINGGOLAN
 - 3312301010 ALIA PRAMESTIA NURDENIA
 - 3312301074 STEVEN SITUMORANG
@@ -41,7 +42,6 @@ Ikuti langkah-langkah ini untuk menjalankan project di environment laptopmu meng
     ```
 
 2.  **Buat File Environment (`.env`):**
-
     - Proyek ini menggunakan file `.env` untuk menyimpan konfigurasi.
     - Download file .env di deskripsi Grup Whatsapp
     - Jalankan perintah berikut di terminal:
@@ -51,13 +51,10 @@ Ikuti langkah-langkah ini untuk menjalankan project di environment laptopmu meng
     - Copy Paste isi .env yg didownload ke .env yang ada di project.
 
 3.  **Penting untuk Pengguna Windows (Line Endings):**
-
     - Pastikan file `entrypoint.sh` menggunakan format line ending **LF** (Unix/Linux) bukan CRLF (Windows).
-    - Buka `entrypoint.sh` di VS Code, lihat di status bar kanan bawah, klik jika tertulis `CRLF` dan ubah menjadi `LF`, lalu simpan file. Lihat contoh gambar
-      ![gambar_fix_windows](https://s4.gifyu.com/images/bL6HZ.png)
+    - Buka `entrypoint.sh` di VS Code, lihat di status bar kanan bawah, klik jika tertulis `CRLF` dan ubah menjadi `LF`, lalu simpan file.
 
 4.  **Build & Jalankan Containers:**
-
     - Buka terminal **di dalam direktori root proyek** (yang berisi `docker-compose.yml`).
     - Jalankan perintah berikut untuk membangun image Docker:
       ```bash
@@ -71,7 +68,6 @@ Ikuti langkah-langkah ini untuk menjalankan project di environment laptopmu meng
       ```
 
 5.  **Akses Aplikasi:**
-
     - Backend API sudah jalan. bisa diakses di:
       - **API Endpoints:** Gunakan Postman PBL-IF09 untuk melihat list API yang terdaftar.
       - **Django Admin:** Bisa diakses di browser `http://localhost:8000/admin/`
@@ -91,6 +87,7 @@ Ikuti langkah-langkah ini untuk menjalankan project di environment laptopmu meng
 **`NOTE TAMBAHAN: `**
 
 Jika ingin mengunakan android device asli jangan lupa tambahkan ip address laptop/pc mu di file .env dibagian ini:
+
 ```text
 ALLOWED_HOSTS=localhost 127.0.0.1 10.0.2.2 192.168.100.235 #tambahkan ip laptop kalian kalau mau coba di emulator
 ```
