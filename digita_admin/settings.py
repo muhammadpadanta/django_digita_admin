@@ -223,6 +223,9 @@ CSRF_TRUSTED_ORIGINS = []
 if RAILWAY_APP_URL:
     CSRF_TRUSTED_ORIGINS.append(RAILWAY_APP_URL)
 
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += ['http://localhost:8000', 'http://127.0.0.1:8000']
+
 # --- CORS (Cross-Origin Resource Sharing) Settings ---
 # Controls which domains are allowed to make cross-origin requests to your API.
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
